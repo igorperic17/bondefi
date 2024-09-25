@@ -18,6 +18,7 @@ mod token {
         pub presale_start: Instant,
         pub presale_end: Instant,
         pub presale_goal: Decimal,
+        pub presale_success: bool,
     }
 
     impl TokenSaleManager {
@@ -65,7 +66,47 @@ mod token {
             self.token_presale_vault
                 .put(self.token_manager.mint(tokens_purchased));
 
+            if self.collateral.amount() == self.presale_goal {
+                self.presale_success = true;
+            }
+
             (nft, collateral_bucket)
+        }
+
+        pub fn end_presale(&mut self) {
+            assert!(
+                Clock::current_time_rounded_to_seconds() > self.presale_end,
+                "Presale has not ended!"
+            );
+
+            assert!(self.presale_success, "Presale has not succeeded :(");
+            // TODO - use collateral to create LP and distribute allocations
+        }
+
+        pub fn presale_nft_redeem(&mut self, nft: Bucket) -> Bucket {
+            assert!(!nft.is_empty(), "Empty NFT sent!");
+            assert_eq!(
+                nft.resource_address(),
+                self.presale_nft_manager.address(),
+                "Invalid NFT type sent!"
+            );
+            assert!(
+                Clock::current_time_rounded_to_seconds() > self.presale_end,
+                "Presale has not ended!"
+            );
+
+            let meta = self
+                .presale_nft_manager
+                .get_non_fungible_data::<TokenMeta>(&nft.as_non_fungible().non_fungible_local_id());
+
+            nft.burn();
+
+            if self.presale_success {
+                self.token_presale_vault.take(meta.tokens_reserved)
+            } else {
+                self.token_presale_vault.take(meta.tokens_reserved).burn();
+                self.collateral.take(meta.collateral_invested)
+            }
         }
 
         // Method to exchange presale NFT for tokens or refund
