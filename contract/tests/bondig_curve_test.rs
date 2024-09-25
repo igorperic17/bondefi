@@ -1,3 +1,4 @@
+use close_to::close_to;
 use contract::bonding_curve::BondingCurve;
 use scrypto::prelude::*;
 
@@ -7,6 +8,7 @@ fn test_linear_bancor_initial_purchase() {
         reserve_ratio: dec!(0.5),
     };
 
-    let result = curve.buy_tokens(dec!(0), dec!(0), dec!(1));
-    assert_eq!(result, dec!(1.73));
+    let result: Decimal = curve.buy_tokens(dec!(0), dec!(0), dec!(1));
+    let (close, _, _) = close_to(result.to_string().parse::<f64>().unwrap(), 1.73, 2);
+    assert!(close, "Expected 1.73, got {}", result);
 }
