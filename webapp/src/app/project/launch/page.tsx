@@ -31,7 +31,11 @@ export default function LaunchToken() {
 
 	const launchToken = async () => {
 		setLoading(true)
-		const result = await radix.creteToken(params).finally(() => {
+		const newPrams = {
+			...params,
+			iconUrl: params.iconUrl || 'https://picsum.photos/200/300',
+		}
+		const result = await radix.creteToken(newPrams).finally(() => {
 			setLoading(false)
 		})
 
