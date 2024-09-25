@@ -12,19 +12,27 @@ export interface TokenDetails {
   bondingCurve: string[]
   factoryComponentId: string
   dateCreated: Date
+  saleStartDate: Date
+  saleEndDate: Date
+  fundraisingTarget: number
+  currentFunding: number
 }
 
 export const extractTokenDetails = (state: StateEntityMetadataPageResponse) =>
-  ({
-    id: state.address,
-    name: extractProperty(state, 'name', 'Unnamed Token'),
-    symbol: extractProperty(state, 'symbol', ''),
-    description: extractProperty(state, 'description', ''),
-    iconUrl: extractProperty(state, 'icon_url', ''),
-    infoUrl: extractProperty(state, 'info_url', ''),
+({
+  id: state.address,
+  name: extractProperty(state, 'name', 'Unnamed Token'),
+  symbol: extractProperty(state, 'symbol', ''),
+  description: extractProperty(state, 'description', ''),
+  iconUrl: extractProperty(state, 'icon_url', ''),
+  infoUrl: extractProperty(state, 'info_url', ''),
 
-    bondingCurve: extractProperty(state, 'bonding_curve', '').split(':'),
-    factoryComponentId: extractProperty(state, 'factory_component', ''),
+  bondingCurve: extractProperty(state, 'bonding_curve', '').split(':'),
+  factoryComponentId: extractProperty(state, 'factory_component', ''),
 
-    dateCreated: new Date(state.ledger_state.proposer_round_timestamp),
-  } satisfies TokenDetails)
+  dateCreated: new Date(state.ledger_state.proposer_round_timestamp),
+  saleStartDate: new Date(extractProperty(state, 'sale_start_date', '')),
+  saleEndDate: new Date(extractProperty(state, 'sale_end_date', '')),
+  fundraisingTarget: Number(extractProperty(state, 'fundraising_target', '0')),
+  currentFunding: Number(extractProperty(state, 'current_funding', '0')),
+} satisfies TokenDetails)
