@@ -1,12 +1,15 @@
 import { string } from '../utils'
 
 export interface BuyParams {
-  accountId: string
-  collateralAddress: string
-  amount: string
+	accountId: string
+	collateralAddress: string
+	amount: string
 }
 
-export const buyManifest = (componentId: string, props: BuyParams) => `
+export const presaleNFTMintManifest = (
+	componentId: string,
+	props: BuyParams,
+) => `
     CALL_METHOD
         Address(${string(props.accountId)})
         "withdraw"
@@ -21,7 +24,7 @@ export const buyManifest = (componentId: string, props: BuyParams) => `
 
     CALL_METHOD
         Address(${string(componentId)})
-        "buy"
+        "presale_nft_mint"
         Bucket("bucket")
     ;
 
