@@ -9,9 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radixdlt/babylon-gateway-api-sdk": "^1.7.0",
+    "@radixdlt/radix-dapp-toolkit": "^2.1.1",
+    "next": "14.2.13",
     "react": "^18",
-    "react-dom": "^18",
-    "next": "14.2.13"
+    "react-dom": "^18"
   },
   "devDependencies": {
     "typescript": "^5",
