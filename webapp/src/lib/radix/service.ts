@@ -92,6 +92,7 @@ export class RadixService {
 
 	async getTokenDetails(id: string) {
 		const meta = await this.gateway.state.getEntityMetadata(id)
+		console.log('meta', meta)
 		return extractTokenDetails(meta)
 	}
 

@@ -2,37 +2,43 @@ import type { StateEntityMetadataPageResponse } from '@radixdlt/babylon-gateway-
 import { extractProperty } from '../utils'
 
 export interface TokenDetails {
-  id: string
-  name: string
-  symbol: string
-  description: string
-  iconUrl: string
-  infoUrl: string
+	id: string
+	name: string
+	symbol: string
+	description: string
+	iconUrl: string
+	infoUrl: string
 
-  bondingCurve: string[]
-  factoryComponentId: string
-  dateCreated: Date
-  saleStartDate: Date
-  saleEndDate: Date
-  fundraisingTarget: number
-  currentFunding: number
+	bondingCurve: string[]
+	factoryComponentId: string
+	dateCreated: Date
+	fundraisingTarget: number
+
+	presaleStart: Date
+	presaleEnd: Date
+	presaleGoal: string
+	presaleSuccess: boolean
 }
 
 export const extractTokenDetails = (state: StateEntityMetadataPageResponse) =>
-({
-  id: state.address,
-  name: extractProperty(state, 'name', 'Unnamed Token'),
-  symbol: extractProperty(state, 'symbol', ''),
-  description: extractProperty(state, 'description', ''),
-  iconUrl: extractProperty(state, 'icon_url', ''),
-  infoUrl: extractProperty(state, 'info_url', ''),
+	({
+		id: state.address,
+		name: extractProperty(state, 'name', 'Unnamed Token'),
+		symbol: extractProperty(state, 'symbol', ''),
+		description: extractProperty(state, 'description', ''),
+		iconUrl: extractProperty(state, 'icon_url', ''),
+		infoUrl: extractProperty(state, 'info_url', ''),
 
-  bondingCurve: extractProperty(state, 'bonding_curve', '').split(':'),
-  factoryComponentId: extractProperty(state, 'factory_component', ''),
+		bondingCurve: extractProperty(state, 'bonding_curve', '').split(':'),
+		factoryComponentId: extractProperty(state, 'factory_component', ''),
 
-  dateCreated: new Date(state.ledger_state.proposer_round_timestamp),
-  saleStartDate: new Date(extractProperty(state, 'sale_start_date', '')),
-  saleEndDate: new Date(extractProperty(state, 'sale_end_date', '')),
-  fundraisingTarget: Number(extractProperty(state, 'fundraising_target', '0')),
-  currentFunding: Number(extractProperty(state, 'current_funding', '0')),
-} satisfies TokenDetails)
+		dateCreated: new Date(state.ledger_state.proposer_round_timestamp),
+		fundraisingTarget: Number(
+			extractProperty(state, 'fundraising_target', '0'),
+		),
+
+		presaleStart: new Date(extractProperty(state, 'presale_start', '')),
+		presaleEnd: new Date(extractProperty(state, 'presale_end', '')),
+		presaleGoal: extractProperty(state, 'presale_goal', '0'),
+		presaleSuccess: extractProperty(state, 'presale_success', false),
+	}) satisfies TokenDetails
