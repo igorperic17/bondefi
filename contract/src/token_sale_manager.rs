@@ -66,6 +66,10 @@ mod token {
             self.token_presale_vault
                 .put(self.token_manager.mint(tokens_purchased));
 
+            if self.collateral.amount() == self.presale_goal {
+                self.presale_success = true;
+            }
+
             (nft, collateral_bucket)
         }
 
@@ -75,7 +79,7 @@ mod token {
                 "Presale has not ended!"
             );
 
-            self.presale_success = self.collateral.amount() == self.presale_goal;
+            assert!(self.presale_success, "Presale has not succeeded :(");
             // TODO - use collateral to create LP and distribute allocations
         }
 
