@@ -3,6 +3,11 @@
 import React, { useState, useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 import TokenCard from '@/components/token-card'
+import { RainbowButton } from "@/components/magicui/rainbow-button"
+import { Rocket } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Progress } from "@/components/ui/progress"
+import HyperText from "@/components/magicui/hyper-text"
 
 interface Token {
   id: string
@@ -19,9 +24,14 @@ const TokenList: React.FC = () => {
   const [tokens, setTokens] = useState<Token[]>([])
   const [page, setPage] = useState(1)
   const [ref, inView] = useInView()
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
 
   const fetchTokens = async () => {
-    // Mock API call
+    setIsLoading(true)
+    // Mock API call with a delay to simulate network request
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
     const newTokens: Token[] = Array.from({ length: 10 }, (_, i) => ({
       id: `token-${page}-${i}`,
       image: `https://picsum.photos/500/500?random=${page * 10 + i}`,
@@ -37,6 +47,7 @@ const TokenList: React.FC = () => {
 
     setTokens((prevTokens) => [...prevTokens, ...newTokens])
     setPage((prevPage) => prevPage + 1)
+    setIsLoading(false)
   }
 
   useEffect(() => {
@@ -47,7 +58,15 @@ const TokenList: React.FC = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-3xl font-bold mb-6">All Tokens</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">All Tokens</h1>
+        <RainbowButton
+          onClick={() => router.push('/token/launch')}
+        >
+          <Rocket className="mr-2 h-4 w-4" />
+          Launch your token
+        </RainbowButton>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 bor">
         {tokens.map((token) => (
           <TokenCard
@@ -62,6 +81,13 @@ const TokenList: React.FC = () => {
           />
         ))}
       </div>
+      {isLoading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="text-center">
+            <HyperText className="text-xl font-bold" text='Loading tokens...'></HyperText>
+          </div>
+        </div>
+      )}
       <div ref={ref} className="h-10 mt-4" />
     </div>
   )
