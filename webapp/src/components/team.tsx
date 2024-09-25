@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 const teamMembers = [
     {
-        name: "John",
+        name: "Bruno ",
         lastName: "Doe",
         position: "CEO & Founder",
         image: "/team/john-doe.jpg"

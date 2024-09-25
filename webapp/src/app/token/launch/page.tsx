@@ -17,9 +17,12 @@ export default function LaunchToken() {
     iconUrl: '',
     symbol: '',
     tagList: [],
-    tokenDetailsUrl: '',
+    projectUrl: '',
     bondingCurveType: 0,
     bondingCurveParameters: [1],
+    launchDate: '',
+    saleEndDate: '',
+    fundingTarget: 0,
   })
 
   const launchToken = async () => {

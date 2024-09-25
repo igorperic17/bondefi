@@ -4,32 +4,33 @@ import { cn } from '@/lib/utils';
 
 const roadmapData = [
     {
-        phase: 'Phase 1: Foundation',
-        deadline: 'Q3 2023',
-        progress: 100,
+        phase: 'Phase 1: MVP Development',
+        deadline: 'Q4 2024',
+        progress: 80,
         features: [
             { name: 'Smart contract development', completed: true },
             { name: 'Website launch', completed: true },
-            { name: 'Community building', completed: true },
+            { name: 'DEX integration (Ociswap)', completed: true },
+            { name: 'Cross-chain integration', completed: false },
         ],
     },
     {
-        phase: 'Phase 2: Growth',
-        deadline: 'Q1 2024',
-        progress: 60,
+        phase: 'Phase 2: Launch',
+        deadline: 'Q1 2025',
+        progress: 0,
         features: [
-            { name: 'Token launch', completed: true },
-            { name: 'Partnerships', completed: true },
-            { name: 'Mobile app development', completed: false },
+            { name: 'Governance implementation', completed: false },
+            { name: 'Smart contract audit', completed: false },
+            { name: 'BDF Token launch', completed: false },
+            { name: 'Partnerships', completed: false },
         ],
     },
     {
         phase: 'Phase 3: Expansion',
-        deadline: 'Q4 2024',
+        deadline: 'Q3 2025',
         progress: 0,
         features: [
-            { name: 'Cross-chain integration', completed: false },
-            { name: 'Governance implementation', completed: false },
+            { name: 'Community building', completed: false },
             { name: 'Global marketing campaign', completed: false },
         ],
     },
@@ -37,8 +38,8 @@ const roadmapData = [
 
 const RoadmapSection = () => {
     return (
-        <section className="py-16">
-            <div className="container mx-auto px-4">
+        <section className="py-16 content-center">
+            <div className="container mx-auto px-4  w-8/12">
                 <h2 className="text-4xl font-semibold mb-12 text-center bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-600">Our Roadmap</h2>
                 <div className="relative">
                     {roadmapData.map((phase, index) => (
