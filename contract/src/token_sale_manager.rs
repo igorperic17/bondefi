@@ -25,7 +25,11 @@ mod token {
         // Method to handle presale
         pub fn presale_nft_mint(&mut self, mut collateral_bucket: Bucket) -> (Bucket, Bucket) {
             assert!(!collateral_bucket.is_empty(), "Empty collateral sent!");
-
+            assert_eq!(
+                collateral_bucket.resource_address(),
+                self.collateral.resource_address(),
+                "Invalid collateral type sent!"
+            );
             assert!(
                 Clock::current_time_rounded_to_seconds() >= self.presale_start,
                 "Presale has not started yet!"
