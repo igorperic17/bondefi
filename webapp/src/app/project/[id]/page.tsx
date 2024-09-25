@@ -14,7 +14,7 @@ import { MagicCard } from '@/components/magicui/magic-card'
 import { BorderBeam } from "@/components/magicui/border-beam"
 import { Progress } from "@/components/ui/progress"
 import { radix } from '@/lib/radix'
-import { featuredProjects } from '@/app/project/page'
+import { featuredProjects } from '../featured-projects-mock'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 
