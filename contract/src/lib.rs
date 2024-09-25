@@ -45,3 +45,5 @@ mod hello {
         }
     }
 }
+
+mod bonding_curve;
