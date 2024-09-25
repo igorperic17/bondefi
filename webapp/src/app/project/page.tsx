@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 import TokenCard from '@/components/token-card'
 import { RainbowButton } from "@/components/magicui/rainbow-button"
-import { Rocket } from 'lucide-react'
+import { ChevronRight, Rocket } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Progress } from "@/components/ui/progress"
 import HyperText from "@/components/magicui/hyper-text"
@@ -65,6 +65,7 @@ const TokenList: React.FC = () => {
         >
           <Rocket className="mr-2 h-4 w-4" />
           Launch your project
+          <ChevronRight className="ml-2 h-4 w-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1.5" />
         </RainbowButton>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 bor">

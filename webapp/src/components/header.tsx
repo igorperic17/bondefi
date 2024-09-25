@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                                 <span className="text-xs text-white">Dashboard</span>
                             </motion.div>
                             <motion.div
-                                onClick={() => router.push('/token/launch')}
+                                onClick={() => router.push('/project/launch')}
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ type: "spring", stiffness: 300 }}
                                 title="Launch Token"
