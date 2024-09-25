@@ -130,6 +130,18 @@ fn test_token_manager() {
     );
     println!("{:?}\n", receipt);
     receipt.expect_commit_success();
+
+    let manifest = ManifestBuilder::new()
+        .lock_fee_from_faucet()
+        .call_method(sale_component, "list_and_enable_staking", manifest_args!())
+        .deposit_batch(account)
+        .build();
+    let receipt = ledger.execute_manifest(
+        manifest,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
+    println!("{:?}\n", receipt);
+    receipt.expect_commit_success();
 }
 
 // #[test]
