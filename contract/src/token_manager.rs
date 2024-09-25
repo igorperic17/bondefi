@@ -1,5 +1,8 @@
+use crate::{
+    bonding_curve::BondingCurve,
+    token_sale_manager::{token::TokenSaleManager, TokenMeta},
+};
 use scrypto::prelude::*;
-use crate::{bonding_curve::BondingCurve, token::{token::TokenSaleManager, TokenMeta}};
 
 #[derive(ScryptoSbor, NonFungibleData, ManifestSbor)]
 pub struct BonDeFiBadge {
@@ -69,33 +72,33 @@ mod token_manager {
                 Runtime::allocate_component_address(TokenSaleManager::blueprint_id());
 
             // REF: https://docs.radixdlt.com/docs/metadata-for-wallet-display
-            let token_manager =
-                ResourceBuilder::new_fungible(OwnerRole::None)
-                    .metadata(metadata! {
-                        init {
-                            "name" => name.clone(), locked;
-                            "symbol" => symbol, locked;
-                            "description" => description.clone(), updatable;
-                            "tags" => tags, updatable;
-                            "icon_url" => icon_url.clone(), updatable;
-                            "info_url" => info_url.clone(), updatable;
-                            "collateral" => collateral, locked;
-                            "factory_component" => component_address, locked;
-                            "bonding_curve" => curve.to_string(), locked;
-                            "created_by" => "BonDeFi", locked;
-                        }
-                    })
-                    .mint_roles(mint_roles! {
-                        minter => rule!(require(global_caller(component_address)));
-                        minter_updater => rule!(deny_all);
-                    })
-                    .burn_roles(burn_roles!(
-                        burner => rule!(require(global_caller(component_address)));
-                        burner_updater => rule!(deny_all);
-                    ))
-                    .create_with_no_initial_supply();
+            let token_manager = ResourceBuilder::new_fungible(OwnerRole::None)
+                .metadata(metadata! {
+                    init {
+                        "name" => name.clone(), locked;
+                        "symbol" => symbol, locked;
+                        "description" => description.clone(), updatable;
+                        "tags" => tags, updatable;
+                        "icon_url" => icon_url.clone(), updatable;
+                        "info_url" => info_url.clone(), updatable;
+                        "collateral" => collateral, locked;
+                        "factory_component" => component_address, locked;
+                        "bonding_curve" => curve.to_string(), locked;
+                        "created_by" => "BonDeFi", locked;
+                    }
+                })
+                .mint_roles(mint_roles! {
+                    minter => rule!(require(global_caller(component_address)));
+                    minter_updater => rule!(deny_all);
+                })
+                .burn_roles(burn_roles!(
+                    burner => rule!(require(global_caller(component_address)));
+                    burner_updater => rule!(deny_all);
+                ))
+                .create_with_no_initial_supply();
 
-            let presale_nft_manager = ResourceBuilder::new_integer_non_fungible::<TokenMeta>(OwnerRole::None)
+            let presale_nft_manager =
+                ResourceBuilder::new_integer_non_fungible::<TokenMeta>(OwnerRole::None)
                     .metadata(metadata! {
                         init {
                             "name" => format!("{} Presale", name), locked;
@@ -116,6 +119,7 @@ mod token_manager {
                 presale_start,
                 presale_end,
                 presale_goal,
+                presale_success: false,
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
