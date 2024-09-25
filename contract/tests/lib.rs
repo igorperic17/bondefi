@@ -71,7 +71,10 @@ fn test_token_manager() {
         })
         .deposit_batch(account)
         .build();
-    let receipt = ledger.execute_manifest(manifest, vec![]);
+    let receipt = ledger.execute_manifest(
+        manifest,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
     println!("{:?}\n", receipt);
     receipt.expect_commit_success();
 }
