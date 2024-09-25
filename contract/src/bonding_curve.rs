@@ -14,23 +14,12 @@ impl BondingCurve {
         amount_paid: Decimal,
     ) -> Decimal {
         match self {
-            //buyAmt = tokenSupply * ((1 + amtPaid / collateral)^CW — 1)
-            // BondingCurve::Bancor {
-            //     reserve_ratio,
-            //     starting_price,
-            // } => {
-            //     token_reserves
-            //         * (((Decimal::ONE + (amount_paid / collateral_reserves)).pow(*reserve_ratio))
-            //             .unwrap()
-            //             - Decimal::ONE)
-            // }
-
             //buyAmt = tokenSupply * ((1 + amtPaid / collateral)^CW — 1)s
             BondingCurve::Bancor { reserve_ratio } => {
-                (token_reserves + 1)
-                    * ((Decimal::ONE + amount_paid / (collateral_reserves + *reserve_ratio))
-                        .pow(Decimal::ONE / *reserve_ratio - Decimal::ONE))
-                    .unwrap()
+                (token_reserves + Decimal::ONE)
+                    * (Decimal::ONE + amount_paid / (collateral_reserves + *reserve_ratio))
+                        .pow(*reserve_ratio)
+                        .unwrap()
             }
         }
     }
