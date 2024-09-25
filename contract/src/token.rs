@@ -15,6 +15,8 @@ mod token {
         pub presale_nft_manager: ResourceManager, // Handle presale NFTs
         pub token_manager: ResourceManager,       // Handle actual tokens
         pub curve: BondingCurve,
+
+        // Presale parameters
         pub presale_start: Instant,
         pub presale_end: Instant,
         pub presale_goal: Decimal,
@@ -55,6 +57,7 @@ mod token {
                     tokens_reserved: tokens_purchased,
                 },
             );
+
             self.collateral.put(collateral_in);
             self.token_presale_vault
                 .put(self.token_manager.mint(tokens_purchased));

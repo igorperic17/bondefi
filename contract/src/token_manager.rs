@@ -1,5 +1,5 @@
-use crate::token::{token::Token, TokenMeta};
 use scrypto::prelude::*;
+use crate::{bonding_curve::BondingCurve, token::{token::TokenSaleManager, TokenMeta}};
 
 #[derive(ScryptoSbor, NonFungibleData, ManifestSbor)]
 pub struct BonDeFiBadge {
@@ -10,7 +10,6 @@ pub struct BonDeFiBadge {
 
 #[blueprint]
 mod token_manager {
-    use crate::bonding_curve::BondingCurve;
 
     struct TokenManager {
         index: u64,
@@ -53,27 +52,33 @@ mod token_manager {
             &mut self,
             collateral: ResourceAddress,
             curve: BondingCurve,
+
+            // Presale parameters
+            presale_start: Instant,
+            presale_end: Instant,
+            presale_goal: Decimal,
+
             name: String,
             symbol: String,
             description: String,
             tags: Vec<String>,
             icon_url: String,
             info_url: String,
-        ) -> (Global<Token>, Bucket) {
+        ) -> (Global<TokenSaleManager>, Bucket) {
             let (address_reservation, component_address) =
-                Runtime::allocate_component_address(Token::blueprint_id());
+                Runtime::allocate_component_address(TokenSaleManager::blueprint_id());
 
             // REF: https://docs.radixdlt.com/docs/metadata-for-wallet-display
             let token_manager =
-                ResourceBuilder::new_integer_non_fungible::<TokenMeta>(OwnerRole::None)
+                ResourceBuilder::new_fungible(OwnerRole::None)
                     .metadata(metadata! {
                         init {
                             "name" => name.clone(), locked;
                             "symbol" => symbol, locked;
-                            "description" => description, updatable;
+                            "description" => description.clone(), updatable;
                             "tags" => tags, updatable;
-                            "icon_url" => icon_url, updatable;
-                            "info_url" => info_url, updatable;
+                            "icon_url" => icon_url.clone(), updatable;
+                            "info_url" => info_url.clone(), updatable;
                             "collateral" => collateral, locked;
                             "factory_component" => component_address, locked;
                             "bonding_curve" => curve.to_string(), locked;
@@ -90,10 +95,27 @@ mod token_manager {
                     ))
                     .create_with_no_initial_supply();
 
-            let token = Token {
+            let presale_nft_manager = ResourceBuilder::new_integer_non_fungible::<TokenMeta>(OwnerRole::None)
+                    .metadata(metadata! {
+                        init {
+                            "name" => format!("{} Presale", name), locked;
+                            "description" => description, updatable;
+                            "icon_url" => icon_url, updatable;
+                            "factory_component" => component_address, locked;
+                            "bonding_curve" => curve.to_string(), locked;
+                        }
+                    })
+                    .create_with_no_initial_supply();
+
+            let token = TokenSaleManager {
                 curve,
                 token_manager,
+                presale_nft_manager,
+                token_presale_vault: Vault::new(token_manager.address()),
                 collateral: Vault::new(collateral),
+                presale_start,
+                presale_end,
+                presale_goal,
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)
