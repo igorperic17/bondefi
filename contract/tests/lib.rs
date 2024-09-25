@@ -28,7 +28,7 @@ fn test_token_manager() {
 
     let collateral = ledger.create_fungible_resource(dec!("1000"), 18, account);
 
-    let now = Instant::new(ledger.get_current_proposer_timestamp_ms());
+    let now = Instant::new(ledger.get_current_proposer_timestamp_ms() - 1);
     let end = Instant::new(ledger.get_current_proposer_timestamp_ms() + 6000000);
 
     // Test the `create_token` method.
