@@ -11,9 +11,12 @@
   "dependencies": {
     "@radixdlt/babylon-gateway-api-sdk": "^1.7.0",
     "@radixdlt/radix-dapp-toolkit": "^2.1.1",
+    "clsx": "^2.1.1",
+    "lodash": "^4.17.21",
     "next": "14.2.13",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "tailwind-merge": "^2.5.2"
   },
   "devDependencies": {
     "typescript": "^5",
