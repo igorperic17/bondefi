@@ -2,97 +2,98 @@ import {
 	DataRequestBuilder,
 	RadixDappToolkit,
 	RadixNetwork,
-} from "@radixdlt/radix-dapp-toolkit";
+} from '@radixdlt/radix-dapp-toolkit'
 
-import { GatewayApiClient } from "@radixdlt/babylon-gateway-api-sdk";
+import { GatewayApiClient } from '@radixdlt/babylon-gateway-api-sdk'
+import { get } from 'lodash'
+import { extractTokenDetails } from './dto/tokenDetails'
 import {
-	createTokenManifest,
 	type CreateTokenProps,
-} from "./manifest/create-token";
-import { extractTokenDetails } from "./dto/tokenDetails";
-import { get } from "lodash";
+	createTokenManifest,
+} from './manifest/create-token'
 
 export interface RadixConfiguration {
-	networkId: number;
-	applicationVersion: string;
-	applicationName: string;
-	applicationDappDefinitionAddress: string;
+	networkId: number
+	applicationVersion: string
+	applicationName: string
+	applicationDappDefinitionAddress: string
 }
 
 export const DEFAULT_CONFIG = {
 	networkId: RadixNetwork.Stokenet,
-	applicationName: process.env.NEXT_PUBLIC_RADIX_APP_NAME!,
-	applicationVersion: process.env.NEXT_PUBLIC_RADIX_APP_VERSION!,
+	applicationName: process.env.NEXT_PUBLIC_RADIX_APP_NAME || '',
+	applicationVersion: process.env.NEXT_PUBLIC_RADIX_APP_VERSION || '',
 	applicationDappDefinitionAddress:
-		process.env.NEXT_PUBLIC_RADIX_DAPP_DEFINITION!,
-} satisfies RadixConfiguration;
+		process.env.NEXT_PUBLIC_RADIX_DAPP_DEFINITION || '',
+} satisfies RadixConfiguration
 
 export class RadixService {
-	public readonly managerComponentId: string;
-	public readonly managerResourceNFT: string;
-	public toolkit: RadixDappToolkit;
-	public gateway: GatewayApiClient;
+	public readonly managerComponentId: string
+	public readonly managerResourceNFT: string
+	public toolkit: RadixDappToolkit
+	public gateway: GatewayApiClient
 
 	constructor(
 		managerComponentId?: string,
 		config: RadixConfiguration = DEFAULT_CONFIG,
 	) {
 		// Disable NEXT prerender on server as Radix references window
-		if (typeof window === "undefined") {
-			this.toolkit = {} as RadixDappToolkit;
-			this.gateway = {} as GatewayApiClient;
-			this.managerComponentId = "";
-			this.managerResourceNFT = "";
-			return;
+		if (typeof window === 'undefined') {
+			this.toolkit = {} as RadixDappToolkit
+			this.gateway = {} as GatewayApiClient
+			this.managerComponentId = ''
+			this.managerResourceNFT = ''
+			return
 		}
 
-		this.toolkit = RadixDappToolkit(config);
-		this.gateway = GatewayApiClient.initialize(config);
+		this.toolkit = RadixDappToolkit(config)
+		this.gateway = GatewayApiClient.initialize(config)
 
 		this.managerComponentId =
-			managerComponentId || process.env.NEXT_PUBLIC_MANAGER_COMPONENT_ID!;
+			managerComponentId || process.env.NEXT_PUBLIC_MANAGER_COMPONENT_ID || ''
 
-		this.managerResourceNFT = process.env.NEXT_PUBLIC_MANAGER_TOKEN_ID!;
+		this.managerResourceNFT = process.env.NEXT_PUBLIC_MANAGER_TOKEN_ID || ''
 
 		this.toolkit.walletApi.setRequestData(
 			DataRequestBuilder.accounts().exactly(1),
-		);
+		)
 
-		this.toolkit.buttonApi.setMode("dark");
-		this.toolkit.buttonApi.setTheme("black");
+		this.toolkit.buttonApi.setMode('dark')
+		// this.toolkit.buttonApi.setTheme('')
 	}
 
 	public getCurrentAccount = () => {
 		const address = this.toolkit.walletApi
 			.getWalletData()
-			?.accounts.at(0)?.address;
-		if (!address) throw new Error("No address found");
+			?.accounts.at(0)?.address
+		if (!address) throw new Error('No address found')
 
-		return address;
-	};
+		return address
+	}
 
 	public async creteToken(props: CreateTokenProps) {
-		const accountId = this.getCurrentAccount();
+		const accountId = this.getCurrentAccount()
 		const transactionManifest = createTokenManifest(
 			accountId,
 			this.managerComponentId,
 			props,
-		);
+		)
 
+		console.log('transactionManifest', transactionManifest)
 		const result = await this.toolkit.walletApi.sendTransaction({
 			transactionManifest,
-		});
+		})
 
-		const transactionId = result.unwrapOr(undefined)?.transactionIntentHash;
+		const transactionId = result.unwrapOr(undefined)?.transactionIntentHash
 
-		if (!transactionId) throw new Error(`Transaction failed: ${result}`);
+		if (!transactionId) throw new Error(`Transaction failed: ${result}`)
 
-		return this.gateway.transaction.getCommittedDetails(transactionId);
+		return this.gateway.transaction.getCommittedDetails(transactionId)
 	}
 
 	async getTokenDetails(id: string) {
-		const meta = await this.gateway.state.getEntityMetadata(id);
-		return extractTokenDetails(meta);
+		const meta = await this.gateway.state.getEntityMetadata(id)
+		return extractTokenDetails(meta)
 	}
 
 	async loadAllTokens(cursor?: string) {
@@ -100,29 +101,29 @@ export class RadixService {
 			this.managerResourceNFT,
 			undefined,
 			cursor,
-		);
+		)
 
 		const data = await this.gateway.state.getNonFungibleData(
 			this.managerResourceNFT,
 			response.items,
-		);
+		)
 
 		const items = data.map((t) => ({
-			name: get(t, "data.programmatic_json.fields[0].value") as string,
-			componentId: get(t, "data.programmatic_json.fields[1].value") as string,
-			resourceId: get(t, "data.programmatic_json.fields[2].value") as string,
-		}));
+			name: get(t, 'data.programmatic_json.fields[0].value') as string,
+			componentId: get(t, 'data.programmatic_json.fields[1].value') as string,
+			resourceId: get(t, 'data.programmatic_json.fields[2].value') as string,
+		}))
 
 		// load details
 		const promises = items.map(async (t) => ({
 			...t,
 			token: await this.getTokenDetails(t.resourceId),
-		}));
+		}))
 
 		return {
 			nextCursor: response.next_cursor,
 			totalCount: response.total_count,
 			items: await Promise.all(promises),
-		};
+		}
 	}
 }
