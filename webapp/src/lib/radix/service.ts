@@ -125,4 +125,12 @@ export class RadixService {
 			items: await Promise.all(promises),
 		}
 	}
+
+	async claimTokens(tokenId: string) {
+
+	}
+
+	async getUserHoldings(tokenId: string) {
+
+	}
 }

@@ -15,11 +15,17 @@ import { BorderBeam } from "@/components/magicui/border-beam"
 import { Progress } from "@/components/ui/progress"
 import { radix } from '@/lib/radix'
 import { featuredProjects } from '@/app/project/page'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 
 export default function TokenPage() {
     const { id } = useParams()
     const router = useRouter()
     const [token, setToken] = useState<TokenDetails | null>(null)
+    const [userHoldings, setUserHoldings] = useState(0)
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [purchaseAmount, setPurchaseAmount] = useState('')
+    const [estimatedTokens, setEstimatedTokens] = useState(0)
 
     useEffect(() => {
         const fetchTokenDetails = async () => {
@@ -28,6 +34,9 @@ export default function TokenPage() {
                     const result = await radix.getTokenDetails(id as string)
                     if (result) {
                         setToken(result)
+                        // Fetch user holdings here
+                        const holdings = await radix.getUserHoldings(id as string)
+                        // setUserHoldings(holdings)
                     }
                 } catch (error) {
                     console.error('Error fetching token details:', error)
@@ -82,6 +91,88 @@ export default function TokenPage() {
         return [1];
     }, [token]);
 
+    const handleBuy = () => {
+        setIsDialogOpen(true)
+    }
+
+    const handlePurchaseConfirm = async () => {
+        if (token) {
+            try {
+                // await radix.buyToken(token.id, Number(purchaseAmount))
+                // Update user holdings after purchase
+                const newHoldings = await radix.getUserHoldings(token.id)
+                // setUserHoldings(newHoldings)
+                setIsDialogOpen(false)
+            } catch (error) {
+                console.error('Error purchasing token:', error)
+            }
+        }
+    }
+
+    const handlePurchaseAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPurchaseAmount(e.target.value)
+        // Calculate estimated tokens based on bonding curve
+        if (token) {
+            const estimated = calculateEstimatedTokens(Number(e.target.value), token.bondingCurve)
+            setEstimatedTokens(estimated)
+        }
+    }
+
+    const calculateEstimatedTokens = (amount: number, bondingCurve: string[]) => {
+        // Implement the calculation based on the bonding curve
+        // This is a placeholder implementation
+        return amount * 100
+    }
+
+    const renderUserPanel = () => {
+        if (!token) return null
+
+        const now = new Date()
+        const saleStartDate = new Date(token.saleStartDate)
+        const saleEndDate = new Date(token.saleEndDate)
+
+        if (now < saleStartDate) {
+            return (
+                <Card className="mb-4">
+                    <CardContent>
+                        <p>Sale has not started yet</p>
+                        <p>Starts on: {saleStartDate.toLocaleDateString()}</p>
+                    </CardContent>
+                </Card>
+            )
+        }
+
+        if (now > saleEndDate || isFundingReached) {
+            if (userHoldings > 0) {
+                return (
+                    <Card className="mb-4">
+                        <CardContent>
+                            <p>Your holdings: {userHoldings} tokens</p>
+                            <Button onClick={() => radix.claimTokens(token.id)}>Claim Tokens</Button>
+                        </CardContent>
+                    </Card>
+                )
+            } else {
+                return (
+                    <Card className="mb-4">
+                        <CardContent>
+                            <p>Sale has ended</p>
+                        </CardContent>
+                    </Card>
+                )
+            }
+        }
+
+        return (
+            <Card className="mb-4">
+                <CardContent>
+                    <p>Your holdings: {userHoldings} tokens</p>
+                    <Button onClick={handleBuy}>Buy Tokens</Button>
+                </CardContent>
+            </Card>
+        )
+    }
+
     return (
         <div>
             <Button
@@ -94,7 +185,6 @@ export default function TokenPage() {
             <div className="p-4 w-full">
                 {token && (
                     <>
-                        {/* <h1 className="text-3xl font-bold mb-6 text-white">{token.name} Overview</h1> */}
                         <div className="mb-6 overflow-hidden shadow-lg rounded-xl transform flex flex-col relative border-0 shadow-gray-800 whitespace-nowrap">
                             <div className="flex">
                                 <div className="relative w-80 h-92 rounded-tl-xl overflow-hidden">
@@ -181,9 +271,28 @@ export default function TokenPage() {
                             <h2 className="text-2xl font-bold mb-4 text-white">Bonding Curve</h2>
                             <Chart curve={curve} params={params} />
                         </div>
+                        {renderUserPanel()}
                     </>
                 )}
             </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Buy Tokens</DialogTitle>
+                        <DialogDescription>
+                            Enter the amount you want to invest
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Input
+                        type="number"
+                        value={purchaseAmount}
+                        onChange={handlePurchaseAmountChange}
+                        placeholder="Enter amount"
+                    />
+                    <p>Estimated tokens: {estimatedTokens}</p>
+                    <Button onClick={handlePurchaseConfirm}>Confirm Purchase</Button>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
