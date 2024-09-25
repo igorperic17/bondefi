@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-// import { radix } from '@/lib/radix'
+import { radix } from '@/lib/radix'
 import { get } from 'lodash'
 import {
     randFood,
@@ -25,7 +25,7 @@ export default function Demo() {
                     //     tagList: [],
                     //     tokenDetailsUrl: 'https://www.radixdlt.com',
                     // })
-                    // 
+
                     // const componentId = get(
                     //     result,
                     //     'transaction.receipt.state_updates.new_global_entities[1].entity_address'
@@ -41,18 +41,18 @@ export default function Demo() {
                     const id =
                         'resource_tdx_2_1thgnpjn3mewvs6k72y75waans8p90gkl59syjea8wvydddnuwr4sv8'
 
-                    // const result = await radix.getTokenDetails(id)
+                    const result = await radix.getTokenDetails(id)
 
-                    // console.log('result', result)
+                    console.log('result', result)
                 }}
             >
                 Get Details
             </Button>
             <Button
                 onClick={async () => {
-                    // const result = await radix.loadAllTokens()
+                    const result = await radix.loadAllTokens()
 
-                    // console.log('result', result)
+                    console.log('result', result)
                 }}
             >
                 Load Tokens

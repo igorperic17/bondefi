@@ -67,7 +67,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                         </div>
                     </div>
                     <div className="flex items-center">
-                        {/* <RadixConnectButton /> */}
+                        <RadixConnectButton />
                     </div>
                 </div>
             </div>

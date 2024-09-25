@@ -41,8 +41,8 @@ mod token {
             );
 
             let max_buy_amount = self.presale_goal - self.collateral.amount();
-            let collateral_in = collateral_bucket.take(max_buy_amount.min(collateral_bucket.amount()));
-
+            let collateral_in =
+                collateral_bucket.take(max_buy_amount.min(collateral_bucket.amount()));
 
             let tokens_purchased = self.curve.buy_tokens(
                 self.collateral.amount(),
@@ -51,7 +51,13 @@ mod token {
             );
 
             let nft = self.presale_nft_manager.mint_non_fungible(
-                &NonFungibleLocalId::const_integer(1),
+                &NonFungibleLocalId::integer(
+                    self.presale_nft_manager // TODO - verify it works if not fallback to internal integer
+                        .total_supply()
+                        .unwrap()
+                        .try_into()
+                        .unwrap(),
+                ),
                 TokenMeta {
                     collateral_invested: collateral_in.amount(),
                     tokens_reserved: tokens_purchased,

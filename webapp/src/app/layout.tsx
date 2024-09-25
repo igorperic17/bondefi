@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import AnimatedGridPattern from "@/components/magicui/animated-grid-pattern";
 import { cn } from "@/lib/utils";
-import Header from "../components/header";
+import Header from "@components/header";
 
 export const metadata: Metadata = {
   title: "Create Next App",
