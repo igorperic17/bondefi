@@ -22,8 +22,9 @@ mod token {
 
     impl TokenSaleManager {
         // Method to handle presale
-        pub fn presale_nft_mint(&mut self, collateral_in: Bucket) -> (Bucket, Bucket) {
-            assert!(!collateral_in.is_empty(), "Empty collateral sent!");
+        pub fn presale_nft_mint(&mut self, mut collateral_bucket: Bucket) -> (Bucket, Bucket) {
+            assert!(!collateral_bucket.is_empty(), "Empty collateral sent!");
+
             assert!(
                 Clock::current_time_rounded_to_seconds() >= self.presale_start,
                 "Presale has not started yet!"
@@ -36,6 +37,11 @@ mod token {
                 self.collateral.amount() < self.presale_goal,
                 "Presale goal reached!"
             );
+
+            let max_buy_amount = self.presale_goal - self.collateral.amount();
+            let collateral_in = collateral_bucket.take(max_buy_amount.min(collateral_bucket.amount()));
+
+
             let tokens_purchased = self.curve.buy_tokens(
                 self.collateral.amount(),
                 self.token_manager.total_supply().unwrap(),
@@ -53,7 +59,7 @@ mod token {
             self.token_presale_vault
                 .put(self.token_manager.mint(tokens_purchased));
 
-            nft
+            (nft, collateral_bucket)
         }
 
         // Method to exchange presale NFT for tokens or refund
