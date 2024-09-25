@@ -1,6 +1,5 @@
-use scrypto::prelude::*;
 use crate::token::{token::Token, TokenMeta};
-
+use scrypto::prelude::*;
 
 #[derive(ScryptoSbor, NonFungibleData, ManifestSbor)]
 pub struct BonDeFiBadge {
@@ -11,6 +10,7 @@ pub struct BonDeFiBadge {
 
 #[blueprint]
 mod token_manager {
+    use crate::bonding_curve::BondingCurve;
 
     struct TokenManager {
         index: u64,
@@ -52,8 +52,7 @@ mod token_manager {
         pub fn create_token(
             &mut self,
             collateral: ResourceAddress,
-            // curve: BondingCurve,
-
+            curve: BondingCurve,
             name: String,
             symbol: String,
             description: String,
@@ -65,33 +64,34 @@ mod token_manager {
                 Runtime::allocate_component_address(Token::blueprint_id());
 
             // REF: https://docs.radixdlt.com/docs/metadata-for-wallet-display
-            let token_manager = ResourceBuilder::new_integer_non_fungible::<TokenMeta>(OwnerRole::None)
-                .metadata(metadata! {
-                    init {
-                        "name" => name.clone(), locked;
-                        "symbol" => symbol, locked;
-                        "description" => description, updatable;
-                        "tags" => tags, updatable;
-                        "icon_url" => icon_url, updatable;
-                        "info_url" => info_url, updatable;
-                        "collateral" => collateral, locked;
-                        "factory_component" => component_address, locked;
-                        // "bonding_curve" => curve.to_string(), locked;
-                        "created_by" => "BonDeFi", locked;
-                    }
-                })
-                .mint_roles(mint_roles! {
-                    minter => rule!(require(global_caller(component_address)));
-                    minter_updater => rule!(deny_all);
-                })
-                .burn_roles(burn_roles!(
-                    burner => rule!(require(global_caller(component_address)));
-                    burner_updater => rule!(deny_all);
-                ))
-                .create_with_no_initial_supply();
+            let token_manager =
+                ResourceBuilder::new_integer_non_fungible::<TokenMeta>(OwnerRole::None)
+                    .metadata(metadata! {
+                        init {
+                            "name" => name.clone(), locked;
+                            "symbol" => symbol, locked;
+                            "description" => description, updatable;
+                            "tags" => tags, updatable;
+                            "icon_url" => icon_url, updatable;
+                            "info_url" => info_url, updatable;
+                            "collateral" => collateral, locked;
+                            "factory_component" => component_address, locked;
+                            "bonding_curve" => curve.to_string(), locked;
+                            "created_by" => "BonDeFi", locked;
+                        }
+                    })
+                    .mint_roles(mint_roles! {
+                        minter => rule!(require(global_caller(component_address)));
+                        minter_updater => rule!(deny_all);
+                    })
+                    .burn_roles(burn_roles!(
+                        burner => rule!(require(global_caller(component_address)));
+                        burner_updater => rule!(deny_all);
+                    ))
+                    .create_with_no_initial_supply();
 
             let token = Token {
-                // curve,
+                curve,
                 token_manager,
                 collateral: Vault::new(collateral),
             }

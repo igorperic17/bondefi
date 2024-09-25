@@ -1,3 +1,4 @@
+use crate::bonding_curve::BondingCurve;
 use scrypto::prelude::*;
 
 #[derive(ScryptoSbor, NonFungibleData, ManifestSbor)]
@@ -8,15 +9,55 @@ pub struct TokenMeta {
 
 #[blueprint]
 mod token {
-
-    struct Token {
+    struct TokenSaleManager {
         pub collateral: Vault,
-        pub token_manager: ResourceManager,
-        // pub curve: BondingCurve,
+        pub token_presale_vault: Vault,
+        pub presale_nft_manager: ResourceManager, // Handle presale NFTs
+        pub token_manager: ResourceManager,       // Handle actual tokens
+        pub curve: BondingCurve,
+        pub presale_start: Instant,
+        pub presale_end: Instant,
+        pub presale_goal: Decimal,
     }
 
-    impl Token {
-        
+    impl TokenSaleManager {
+        // Method to handle presale
+        pub fn presale_nft_mint(&mut self, collateral_in: Bucket) -> (Bucket, Bucket) {
+            assert!(!collateral_in.is_empty(), "Empty collateral sent!");
+            assert!(
+                Clock::current_time_rounded_to_seconds() >= self.presale_start,
+                "Presale has not started yet!"
+            );
+            assert!(
+                Clock::current_time_rounded_to_seconds() <= self.presale_end,
+                "Presale has ended!"
+            );
+            assert!(
+                self.collateral.amount() < self.presale_goal,
+                "Presale goal reached!"
+            );
+            let tokens_purchased = self.curve.buy_tokens(
+                self.collateral.amount(),
+                self.token_manager.total_supply().unwrap(),
+                collateral_in.amount(),
+            );
+
+            let nft = self.presale_nft_manager.mint_non_fungible(
+                &NonFungibleLocalId::const_integer(1),
+                TokenMeta {
+                    collateral_invested: collateral_in.amount(),
+                    tokens_reserved: tokens_purchased,
+                },
+            );
+            self.collateral.put(collateral_in);
+            self.token_presale_vault
+                .put(self.token_manager.mint(tokens_purchased));
+
+            nft
+        }
+
+        // Method to exchange presale NFT for tokens or refund
+
         // pub fn buy(&mut self, collateral_in: Bucket) -> Bucket {
         //     assert!(!collateral_in.is_empty(), "Empty collateral sent!");
 
