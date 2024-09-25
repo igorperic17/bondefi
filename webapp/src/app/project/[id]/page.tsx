@@ -39,6 +39,22 @@ export default function TokenPage() {
     const isTrending = false; // You might want to implement a trending logic
     const isFundingReached = token ? token.currentFunding >= token.fundraisingTarget : false;
 
+    const curve = useMemo(() => {
+        console.log(token?.bondingCurve);
+        if (token && token.bondingCurve.length > 0) {
+            const curveType = token.bondingCurve[0].toLowerCase();
+            return BOUNDING_CURVES.find(c => c.name.toLowerCase() === curveType) || BOUNDING_CURVES[0];
+        }
+        return BOUNDING_CURVES[0];
+    }, [token]);
+
+    const params = useMemo(() => {
+        if (token && token.bondingCurve.length > 1) {
+            return token.bondingCurve.slice(1).map(Number);
+        }
+        return [1];
+    }, [token]);
+
     return (
         <div>
             <Button
@@ -131,9 +147,12 @@ export default function TokenPage() {
                                             </div>
                                         </div>
                                     )}
-                                    <a href={token.infoUrl} className="text-blue-400 hover:underline">More Info</a>
                                 </div>
                             </div>
+                        </div>
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-bold mb-4 text-white">Bonding Curve</h2>
+                            <Chart curve={curve} params={params} />
                         </div>
                     </>
                 )}
