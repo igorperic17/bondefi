@@ -108,6 +108,14 @@ mod token_manager {
                             "bonding_curve" => curve.to_string(), locked;
                         }
                     })
+                    .mint_roles(mint_roles! {
+                        minter => rule!(require(global_caller(component_address)));
+                        minter_updater => rule!(deny_all);
+                    })
+                    .burn_roles(burn_roles!(
+                        burner => rule!(require(global_caller(component_address)));
+                        burner_updater => rule!(deny_all);
+                    ))
                     .create_with_no_initial_supply();
 
             let token = TokenSaleManager {
