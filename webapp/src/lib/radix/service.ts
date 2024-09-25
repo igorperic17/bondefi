@@ -79,7 +79,6 @@ export class RadixService {
 			props,
 		)
 
-		console.log('transactionManifest', transactionManifest)
 		const result = await this.toolkit.walletApi.sendTransaction({
 			transactionManifest,
 		})

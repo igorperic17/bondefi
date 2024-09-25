@@ -28,7 +28,11 @@ export default function LaunchToken() {
 
 	const launchToken = async () => {
 		setLoading(true)
-		radix.creteToken(params).finally(() => setLoading(false))
+		const result = await radix
+			.creteToken(params)
+			.finally(() => setLoading(false))
+
+		console.log(result)
 	}
 
 	return (

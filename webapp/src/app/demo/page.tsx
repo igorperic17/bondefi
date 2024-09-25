@@ -3,12 +3,13 @@
 import { Button } from '@/components/ui/button'
 import { radix } from '@/lib/radix'
 import { presaleNFTMintManifest } from '@/lib/radix/manifest/buy'
-import {
-	randCurrencyCode,
-	randFood,
-	randProductDescription,
-} from '@ngneat/falso'
-import { get } from 'lodash'
+
+const test = async () => {
+	while (true) {
+		const next = await zz().next()
+		console.log('next', next)
+	}
+}
 
 export default function Demo() {
 	return (
@@ -30,7 +31,6 @@ export default function Demo() {
 					)
 
 					console.log('manifest', manifest)
-
 					radix.toolkit.walletApi.sendTransaction({
 						transactionManifest: manifest,
 					})
