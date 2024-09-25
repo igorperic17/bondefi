@@ -5,9 +5,12 @@ export interface CreateTokenProps {
   name: string
   symbol: string
   description: string
-  tagList: string[]
   iconUrl: string
-  tokenDetailsUrl: string
+  projectUrl: string
+  launchDate: string
+  tagList: [],
+  saleEndDate: string
+  fundingTarget: number
 
   bondingCurveType: number
   bondingCurveParameters: number[]
@@ -19,9 +22,10 @@ export const EXAMPLE_CREATE_TOKEN_PROPS = {
   name: 'BonDeFi',
   symbol: 'BDFI',
   description: 'BonDeFi Token',
-  tagList: ['BonDeFi', 'DeFi', 'BonFi'],
   iconUrl: 'https://bondefi.com/icon.png',
-  tokenDetailsUrl: 'https://bondefi.com',
+  launchDate: '2023-07-01',
+  saleEndDate: '2023-08-01',
+  fundingTarget: 100000,
 }
 
 export const createTokenManifest = (
@@ -42,9 +46,10 @@ export const createTokenManifest = (
             ${string(props.name)}
             ${string(props.symbol)}
             ${string(props.description)}
-            Array<String>(${props.tagList.map(string).join(', ')})
             ${string(props.iconUrl)}
-            ${string(props.tokenDetailsUrl)}
+            ${string(props.launchDate)}
+            ${string(props.saleEndDate)}
+            Decimal("${props.fundingTarget}")
         ;
 
         CALL_METHOD

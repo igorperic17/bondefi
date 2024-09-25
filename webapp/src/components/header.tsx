@@ -29,9 +29,9 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ type: "spring", stiffness: 300 }}
                                 title="Home"
-                                className="flex flex-col items-center"
+                                className="flex flex-col items-center cursor-pointer"
                             >
-                                <HomeIcon className="cursor-pointer" />
+                                <HomeIcon />
                                 <span className="text-xs text-white">Home</span>
                             </motion.div>
                             <motion.div
@@ -39,9 +39,9 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ type: "spring", stiffness: 300 }}
                                 title="Tokens"
-                                className="flex flex-col items-center"
+                                className="flex flex-col items-center cursor-pointer"
                             >
-                                <CoinsIcon className="cursor-pointer" />
+                                <CoinsIcon />
                                 <span className="text-xs text-white">Tokens</span>
                             </motion.div>
                             <motion.div
@@ -49,9 +49,9 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ type: "spring", stiffness: 300 }}
                                 title="Dashboard"
-                                className="flex flex-col items-center"
+                                className="flex flex-col items-center cursor-pointer"
                             >
-                                <LayoutDashboardIcon className="cursor-pointer" />
+                                <LayoutDashboardIcon />
                                 <span className="text-xs text-white">Dashboard</span>
                             </motion.div>
                             <motion.div
@@ -59,9 +59,9 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ type: "spring", stiffness: 300 }}
                                 title="Launch Token"
-                                className="flex flex-col items-center"
+                                className="flex flex-col items-center cursor-pointer"
                             >
-                                <RocketIcon className="cursor-pointer" />
+                                <RocketIcon />
                                 <span className="text-xs text-white">Launch</span>
                             </motion.div>
                         </div>
