@@ -14,6 +14,7 @@ import { MagicCard } from '@/components/magicui/magic-card'
 import { BorderBeam } from "@/components/magicui/border-beam"
 import { Progress } from "@/components/ui/progress"
 import { radix } from '@/lib/radix'
+import { featuredProjects } from '@/app/project/page'
 
 export default function TokenPage() {
     const { id } = useParams()
@@ -25,9 +26,36 @@ export default function TokenPage() {
             if (id) {
                 try {
                     const result = await radix.getTokenDetails(id as string)
-                    setToken(result)
+                    if (result) {
+                        setToken(result)
+                    }
                 } catch (error) {
                     console.error('Error fetching token details:', error)
+                }
+
+                // If not found in radix or if there was an error, check featured projects
+                if (!token) {
+                    const featuredProject = featuredProjects.find(project => project.id === id)
+                    if (featuredProject) {
+                        const launchDate = new Date(featuredProject.launchDate);
+                        setToken({
+                            id: featuredProject.id,
+                            name: featuredProject.name,
+                            symbol: featuredProject.name.split(' ')[0].toUpperCase(),
+                            description: 'Featured project description',
+                            iconUrl: featuredProject.image,
+                            dateCreated: launchDate,
+                            bondingCurve: ['Linear'],
+                            currentFunding: featuredProject.currentFunding,
+                            fundraisingTarget: featuredProject.fundraisingTarget,
+                            factoryComponentId: 'featured-component-id',
+                            saleStartDate: launchDate,
+                            saleEndDate: new Date(launchDate.getTime() + 30 * 24 * 60 * 60 * 1000),
+                            infoUrl: featuredProject.projectUrl || '',
+                        })
+                    } else {
+                        console.error('Token not found')
+                    }
                 }
             }
         }
@@ -40,7 +68,6 @@ export default function TokenPage() {
     const isFundingReached = token ? token.currentFunding >= token.fundraisingTarget : false;
 
     const curve = useMemo(() => {
-        console.log(token?.bondingCurve);
         if (token && token.bondingCurve.length > 0) {
             const curveType = token.bondingCurve[0].toLowerCase();
             return BOUNDING_CURVES.find(c => c.name.toLowerCase() === curveType) || BOUNDING_CURVES[0];
@@ -67,7 +94,7 @@ export default function TokenPage() {
             <div className="p-4 w-full">
                 {token && (
                     <>
-                        <h1 className="text-3xl font-bold mb-6 text-white">{token.name} Overview</h1>
+                        {/* <h1 className="text-3xl font-bold mb-6 text-white">{token.name} Overview</h1> */}
                         <div className="mb-6 overflow-hidden shadow-lg rounded-xl transform flex flex-col relative border-0 shadow-gray-800 whitespace-nowrap">
                             <div className="flex">
                                 <div className="relative w-80 h-92 rounded-tl-xl overflow-hidden">

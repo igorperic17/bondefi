@@ -71,7 +71,7 @@ const TokenCard: React.FC<TokenCardProps> = ({ image, name, totalSupply, launchD
             </div>
 
             <div className="p-4 flex flex-col items-center w-full" onClick={handleClick}>
-                {(isTrending || isFundingReached) && <BorderBeam size={250} duration={12} delay={9} />}
+                {(isTrending) && <BorderBeam size={250} duration={12} delay={9} />}
                 <h2 className="text-2xl font-bold mb-2 text-white">{name}</h2>
                 <p className="text-sm text-gray-400 mb-1 flex items-center">
                     <DollarSignIcon className="w-4 h-4 mr-2" />
