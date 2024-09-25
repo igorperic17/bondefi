@@ -1,4 +1,4 @@
-use contract::{bonding_curve::BondingCurve, token_manager::*};
+use contract::bonding_curve::BondingCurve;
 use scrypto::prelude::*;
 use scrypto_test::prelude::*;
 
