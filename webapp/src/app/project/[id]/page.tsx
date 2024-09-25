@@ -86,11 +86,11 @@ export default function TokenPage() {
     return (
         <div>
             <Button
-                onClick={() => router.push('/token')}
+                onClick={() => router.push('/project')}
                 className="mb-4 flex items-center"
                 variant="outline"
             >
-                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Token List
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Project List
             </Button>
             <div className="p-4 w-full">
                 {token && (

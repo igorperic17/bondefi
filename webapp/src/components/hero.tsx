@@ -35,7 +35,7 @@ const Hero: React.FC = () => {
                         // className="group"
                         >
                             <Rocket className="mr-2 h-4 w-4" />
-                            Launch your token
+                            Launch your project
                             <ChevronRight className="ml-2 h-4 w-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1.5" />
                         </RainbowButton>
                     </div>

@@ -33,7 +33,7 @@ export default function LaunchToken() {
 
 	return (
 		<div className="p-4 w-full">
-			<h1 className="text-3xl font-bold mb-6 text-white">Launch New Token</h1>
+			<h1 className="text-3xl font-bold mb-6 text-white">Launch New Project</h1>
 			<div className="flex gap-10">
 				<div className="flex-[0.6]">
 					<TokenForm params={params} onSet={setParams} />

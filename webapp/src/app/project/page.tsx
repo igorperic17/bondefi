@@ -59,12 +59,12 @@ const TokenList: React.FC = () => {
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">All Tokens</h1>
+        <h1 className="text-3xl font-bold">All Projects</h1>
         <RainbowButton
           onClick={() => router.push('/token/launch')}
         >
           <Rocket className="mr-2 h-4 w-4" />
-          Launch your token
+          Launch your project
         </RainbowButton>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 bor">
@@ -84,7 +84,7 @@ const TokenList: React.FC = () => {
       {isLoading && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="text-center">
-            <HyperText className="text-xl font-bold" text='Loading tokens...'></HyperText>
+            <HyperText className="text-xl font-bold" text='Loading projects...'></HyperText>
           </div>
         </div>
       )}
