@@ -1,11 +1,16 @@
-use scrypto_test::prelude::*;
-
 use contract::{bonding_curve::BondingCurve, token_manager::*};
+use scrypto::prelude::*;
+use scrypto_test::prelude::*;
 
 #[test]
 fn test_token_manager() {
     // Setup the environment
-    let mut ledger = LedgerSimulatorBuilder::new().build();
+    let mut ledger = LedgerSimulatorBuilder::new()
+        .with_custom_genesis(CustomGenesis::default(
+            Epoch::of(1),
+            CustomGenesis::default_consensus_manager_config(),
+        ))
+        .build();
 
     // Create an account
     let (public_key, _private_key, account) = ledger.new_allocated_account();
@@ -60,7 +65,11 @@ fn test_token_manager() {
         vec![NonFungibleGlobalId::from_public_key(&public_key)],
     );
     println!("{:?}\n", receipt);
-    let sale_component = receipt.expect_commit(true).new_component_addresses()[0];
+    let sale_component_receipt = receipt.expect_commit(true);
+    let sale_component = sale_component_receipt.new_component_addresses()[0];
+
+    let launched_token_resource = sale_component_receipt.new_resource_addresses()[0];
+    let presale_nft_resource = sale_component_receipt.new_resource_addresses()[1];
 
     let manifest = ManifestBuilder::new()
         .lock_fee_from_faucet()
@@ -71,6 +80,50 @@ fn test_token_manager() {
         })
         .deposit_batch(account)
         .build();
+    let receipt = ledger.execute_manifest(
+        manifest,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
+    println!("{:?}\n", receipt);
+
+    let manifest = ManifestBuilder::new()
+        .lock_fee_from_faucet()
+        .withdraw_non_fungibles_from_account(
+            account,
+            presale_nft_resource,
+            [NonFungibleLocalId::integer(0)],
+        )
+        .take_all_from_worktop(presale_nft_resource, "presale_nft_resource")
+        .call_method_with_name_lookup(sale_component, "presale_nft_redeem", |lookup| {
+            (lookup.bucket("presale_nft_resource"),)
+        })
+        .deposit_batch(account)
+        .build();
+
+    let receipt = ledger.execute_manifest(
+        manifest,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
+    println!("{:?}\n", receipt);
+    receipt.expect_commit_failure();
+
+    let ended_timestamp = (end.seconds_since_unix_epoch * 1000) + 1000;
+    ledger.advance_to_round_at_timestamp(Round::of(3), ended_timestamp);
+
+    let manifest = ManifestBuilder::new()
+        .lock_fee_from_faucet()
+        .withdraw_non_fungibles_from_account(
+            account,
+            presale_nft_resource,
+            [NonFungibleLocalId::integer(0)],
+        )
+        .take_all_from_worktop(presale_nft_resource, "presale_nft_resource")
+        .call_method_with_name_lookup(sale_component, "presale_nft_redeem", |lookup| {
+            (lookup.bucket("presale_nft_resource"),)
+        })
+        .deposit_batch(account)
+        .build();
+
     let receipt = ledger.execute_manifest(
         manifest,
         vec![NonFungibleGlobalId::from_public_key(&public_key)],
