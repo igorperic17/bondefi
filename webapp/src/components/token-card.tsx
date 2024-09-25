@@ -2,10 +2,10 @@ import React from 'react';
 import Image from 'next/image';
 import { MagicCard } from '@/components/magicui/magic-card';
 import { BorderBeam } from "@/components/magicui/border-beam";
-import { TrendingUpIcon, DollarSignIcon, CalendarIcon, StarIcon } from 'lucide-react';
+import { TrendingUpIcon, DollarSignIcon, CalendarIcon, StarIcon, ImageIcon } from 'lucide-react';
 
 interface TokenCardProps {
-    image: string;
+    image: string | undefined;
     name: string;
     totalSupply: string;
     launchDate: string;
@@ -28,13 +28,22 @@ const TokenCard: React.FC<TokenCardProps> = ({ image, name, totalSupply, launchD
             onClick={handleClick}
         >
             <div className="relative h-48 w-full rounded-t-xl overflow-hidden" onClick={handleClick}>
-                <Image
-                    src={image}
-                    alt={`${name} token`}
-                    layout="fill"
-                    objectFit="cover"
-                    className="transition duration-500 ease-in-out transform hover:scale-105"
-                />
+                {image ? (
+                    <Image
+                        src={image}
+                        alt={`${name} token`}
+                        layout="fill"
+                        objectFit="cover"
+                        className="transition duration-500 ease-in-out transform hover:scale-105"
+                    />
+                ) : (
+                    <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500">
+                        <div className="text-white text-center">
+                            <ImageIcon className="w-12 h-12 mx-auto mb-2" />
+                            <p className="text-sm">No image available</p>
+                        </div>
+                    </div>
+                )}
                 {(isTrending || isFundingReached || isNewToken) && (
                     <div className="absolute top-2 right-2 flex flex-col space-y-1 items-end">
                         <div className="bg-black bg-opacity-50 p-1 rounded-2xl space-y-1">

@@ -8,80 +8,52 @@ import Image from 'next/image'
 import { Chart } from '@/app/project/launch/bounding-curve/chart'
 import { cn } from '@/lib/utils'
 import { BOUNDING_CURVES, BoundingCurve } from '@/lib/bounding-curve'
-import { ArrowLeft, TrendingUpIcon, DollarSignIcon, CalendarIcon, StarIcon, InfoIcon, ChartLineIcon } from 'lucide-react'
+import { ArrowLeft, TrendingUpIcon, DollarSignIcon, CalendarIcon, StarIcon, InfoIcon, ChartLineIcon, ImageIcon } from 'lucide-react'
 import { TokenDetails, extractTokenDetails } from '@/lib/radix/dto/tokenDetails'
 import { MagicCard } from '@/components/magicui/magic-card'
 import { BorderBeam } from "@/components/magicui/border-beam"
 import { Progress } from "@/components/ui/progress"
-
-interface Transaction {
-    id: string
-    date: string
-    amount: string
-    type: string
-}
+import { radix } from '@/lib/radix'
 
 export default function TokenPage() {
     const { id } = useParams()
     const router = useRouter()
     const [token, setToken] = useState<TokenDetails | null>(null)
-    const [transactions, setTransactions] = useState<Transaction[]>([])
-    const [page, setPage] = useState(1)
 
     useEffect(() => {
-        console.log(id)
-        if (id) {
-            // Mock API call to fetch token details
-            const fetchedToken: TokenDetails = {
-                id: id as string,
-                name: `Token ${id}`,
-                symbol: 'TKN',
-                description: 'This is a sample token description.',
-                iconUrl: `https://picsum.photos/200/300?random=${id}`,
-                infoUrl: 'https://example.com',
-                bondingCurve: ['linear', '1', '0'],
-                factoryComponentId: 'component_sim1q0a7ecesc8jvwd9xvsncz9q8ra4gmhc2m8e9z8ys5crg3r9nz',
-                dateCreated: new Date(Date.now() - Math.random() * 10000000000),
-                fundraisingTarget: 100000,
-                currentFunding: 50000,
-                saleStartDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-                saleEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        const fetchTokenDetails = async () => {
+            if (id) {
+                try {
+                    const result = await radix.getTokenDetails(id as string)
+                    setToken(result)
+                } catch (error) {
+                    console.error('Error fetching token details:', error)
+                }
             }
-            setToken(fetchedToken)
-
-            // Mock API call to fetch transactions
-            const newTransactions: Transaction[] = Array.from({ length: 10 }, (_, i) => ({
-                id: `transaction-${page}-${i}`,
-                date: new Date(Date.now() - Math.random() * 100000000).toLocaleDateString(),
-                amount: `${Math.floor(Math.random() * 1000)} tokens`,
-                type: Math.random() > 0.5 ? 'buy' : 'sell',
-            }))
-            setTransactions(prevTransactions => [...prevTransactions, ...newTransactions])
         }
-    }, [id, page])
 
-    const loadMoreTransactions = () => {
-        setPage(prevPage => prevPage + 1)
-    }
+        fetchTokenDetails()
+    }, [id])
 
-    const curve = useMemo(() => BOUNDING_CURVES[0], [])
-    const params = useMemo(() => [1], [])
+    const isNewToken = token ? (new Date().getTime() - new Date(token.dateCreated).getTime()) < 30 * 24 * 60 * 60 * 1000 : false;
+    const isTrending = false; // You might want to implement a trending logic
+    const isFundingReached = token ? token.currentFunding >= token.fundraisingTarget : false;
 
-    const isNewToken = token ? (new Date().getTime() - token.dateCreated.getTime()) < 30 * 24 * 60 * 60 * 1000 : false;
+    const curve = useMemo(() => {
+        console.log(token?.bondingCurve);
+        if (token && token.bondingCurve.length > 0) {
+            const curveType = token.bondingCurve[0].toLowerCase();
+            return BOUNDING_CURVES.find(c => c.name.toLowerCase() === curveType) || BOUNDING_CURVES[0];
+        }
+        return BOUNDING_CURVES[0];
+    }, [token]);
 
-    const getSaleStatus = (startDate: Date, endDate: Date) => {
-        const now = new Date();
-        if (now < startDate) return "Not Started";
-        if (now > endDate) return "Finished";
-        return "In Progress";
-    }
-
-    const getSaleProgress = (startDate: Date, endDate: Date) => {
-        const now = new Date();
-        const total = endDate.getTime() - startDate.getTime();
-        const progress = now.getTime() - startDate.getTime();
-        return Math.min(100, Math.max(0, (progress / total) * 100));
-    }
+    const params = useMemo(() => {
+        if (token && token.bondingCurve.length > 1) {
+            return token.bondingCurve.slice(1).map(Number);
+        }
+        return [1];
+    }, [token]);
 
     return (
         <div>
@@ -96,85 +68,109 @@ export default function TokenPage() {
                 {token && (
                     <>
                         <h1 className="text-3xl font-bold mb-6 text-white">{token.name} Overview</h1>
-                        <MagicCard className="mb-6 overflow-hidden shadow-lg rounded-xl transform transition duration-500 hover:scale-105 cursor-pointer flex flex-col relative border-0 shadow-gray-800 whitespace-nowrap">
-                            <BorderBeam size={250} duration={12} delay={9} />
-                            <div className="relative h-48 w-full rounded-t-xl overflow-hidden">
-                                <Image
-                                    src={token.iconUrl || '/placeholder.png'}
-                                    alt={`${token.name} token`}
-                                    layout="fill"
-                                    objectFit="cover"
-                                    className="transition duration-500 ease-in-out transform hover:scale-105"
-                                />
-                                {isNewToken && (
-                                    <div className="absolute top-2 right-2 flex flex-col space-y-1 items-end">
-                                        <div className="bg-black bg-opacity-50 p-1 rounded-2xl space-y-1">
-                                            <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center">
-                                                <StarIcon className="w-4 h-4 mr-1" />
-                                                New
-                                            </span>
+                        <div className="mb-6 overflow-hidden shadow-lg rounded-xl transform flex flex-col relative border-0 shadow-gray-800 whitespace-nowrap">
+                            <div className="flex">
+                                <div className="relative w-80 h-92 rounded-tl-xl overflow-hidden">
+                                    {token.iconUrl ? (
+                                        <Image
+                                            src={token.iconUrl}
+                                            alt={`${token.name} token`}
+                                            layout="fill"
+                                            objectFit="cover"
+                                            className="transition duration-500 ease-in-out transform hover:scale-105"
+                                        />
+                                    ) : (
+                                        <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-pink-500">
+                                            <div className="text-white text-center">
+                                                <ImageIcon className="w-12 h-12 mx-auto mb-2" />
+                                                <p className="text-sm">No image available</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="p-4 flex flex-col flex-grow">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h2 className="text-2xl font-bold text-white">{token.name} ({token.symbol})</h2>
+                                        <div className="flex flex-col space-y-1 items-end">
+                                            {(isNewToken || isTrending || isFundingReached) && (
+                                                <div className="bg-black bg-opacity-50 p-1 rounded-2xl space-y-1">
+                                                    {isNewToken && (
+                                                        <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center">
+                                                            <StarIcon className="w-4 h-4 mr-1" />
+                                                            New
+                                                        </span>
+                                                    )}
+                                                    {isTrending && (
+                                                        <span className="bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center">
+                                                            <TrendingUpIcon className="w-4 h-4 mr-1" />
+                                                            Trending
+                                                        </span>
+                                                    )}
+                                                    {isFundingReached && (
+                                                        <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center">
+                                                            <DollarSignIcon className="w-4 h-4 mr-1" />
+                                                            Funded
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                            <div className="p-4 flex flex-col items-center w-full">
-                                <h2 className="text-2xl font-bold mb-2 text-white">{token.name} ({token.symbol})</h2>
-                                <p className="text-sm text-gray-400 mb-1 flex items-center">
-                                    <CalendarIcon className="w-4 h-4 mr-2" />
-                                    Launched: {token.dateCreated.toLocaleDateString()}
-                                </p>
-                                <p className="text-sm text-gray-400 mb-1 flex items-center">
-                                    <InfoIcon className="w-4 h-4 mr-2" />
-                                    {token.description}
-                                </p>
-                                <p className="text-sm text-gray-400 mb-1 flex items-center">
-                                    <ChartLineIcon className="w-4 h-4 mr-2" />
-                                    Bonding Curve: {token.bondingCurve.join(', ')}
-                                </p>
-                                <p className="text-sm text-gray-400 mb-1 flex items-center">
-                                    <DollarSignIcon className="w-4 h-4 mr-2" />
-                                    Funding: ${token.currentFunding.toLocaleString()} / ${token.fundraisingTarget.toLocaleString()}
-                                </p>
-                                <p className="text-sm text-gray-400 mb-4 flex items-center">
-                                    <InfoIcon className="w-4 h-4 mr-2" />
-                                    Factory Component: {token.factoryComponentId}
-                                </p>
-                                <div className="w-full mb-4">
-                                    <p className="text-sm text-gray-400 mb-1">Sale Timeline</p>
-                                    <Progress value={getSaleProgress(token.saleStartDate, token.saleEndDate)} className="w-full" />
-                                    <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                        <span>{token.saleStartDate.toLocaleDateString()}</span>
-                                        <span>{getSaleStatus(token.saleStartDate, token.saleEndDate)}</span>
-                                        <span>{token.saleEndDate.toLocaleDateString()}</span>
-                                    </div>
+                                    <p className="text-sm text-gray-400 mb-1 flex items-center">
+                                        <CalendarIcon className="w-4 h-4 mr-2" />
+                                        Launched: {new Date(token.dateCreated).toLocaleDateString()}
+                                    </p>
+                                    <p className="text-sm text-gray-400 mb-1 flex items-center">
+                                        <InfoIcon className="w-4 h-4 mr-2" />
+                                        {token.description}
+                                    </p>
+                                    <p className="text-sm text-gray-400 mb-1 flex items-center">
+                                        <ChartLineIcon className="w-4 h-4 mr-2" />
+                                        Bonding Curve: {token.bondingCurve.join(', ') || 'Not specified'}
+                                    </p>
+                                    <p className="text-sm text-gray-400 mb-1 flex items-center">
+                                        <DollarSignIcon className="w-4 h-4 mr-2" />
+                                        Funding: ${token.currentFunding.toLocaleString()} / ${token.fundraisingTarget.toLocaleString()}
+                                    </p>
+                                    <p className="text-sm text-gray-400 mb-4 flex items-center">
+                                        <InfoIcon className="w-4 h-4 mr-2" />
+                                        Factory Component: <a href={`https://stokenet-dashboard.radixdlt.com/component/${token.factoryComponentId}/summary`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline ml-2">{token.factoryComponentId}</a>
+                                    </p>
+                                    {token.saleStartDate && token.saleEndDate && (
+                                        <div className="w-full mb-4">
+                                            <p className="text-sm text-gray-400 mb-1">Sale Timeline</p>
+                                            <Progress value={getSaleProgress(new Date(token.saleStartDate), new Date(token.saleEndDate))} className="w-full" />
+                                            <div className="flex justify-between text-xs text-gray-400 mt-1">
+                                                <span>{new Date(token.saleStartDate).toLocaleDateString()}</span>
+                                                <span>{getSaleStatus(new Date(token.saleStartDate), new Date(token.saleEndDate))}</span>
+                                                <span>{new Date(token.saleEndDate).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                                <a href={token.infoUrl} className="text-blue-400 hover:underline">More Info</a>
                             </div>
-                        </MagicCard>
-                        <div className="mb-6">
-                            <Chart curve={curve} params={params} />
                         </div>
                         <div className="mb-6">
-                            <h2 className="text-2xl font-bold mb-4 text-white">Transactions</h2>
-                            <div className="grid grid-cols-1 gap-4">
-                                {transactions.map(transaction => (
-                                    <Card key={transaction.id} className="bg-gradient-to-br from-gray-700 to-black-800 border border-black-700">
-                                        <CardContent>
-                                            <p className="text-sm text-gray-300 mb-1">Date: {transaction.date}</p>
-                                            <p className="text-sm text-gray-300 mb-1">Amount: {transaction.amount}</p>
-                                            <p className={cn(
-                                                "text-sm mb-1",
-                                                "inline animate-gradient bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent"
-                                            )}>Type: {transaction.type}</p>
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </div>
-                            <Button onClick={loadMoreTransactions} className="mt-4">Load More</Button>
+                            <h2 className="text-2xl font-bold mb-4 text-white">Bonding Curve</h2>
+                            <Chart curve={curve} params={params} />
                         </div>
                     </>
                 )}
             </div>
         </div>
     )
+}
+
+function getSaleStatus(startDate: Date, endDate: Date) {
+    const now = new Date();
+    if (now < startDate) return "Not Started";
+    if (now > endDate) return "Finished";
+    return "In Progress";
+}
+
+function getSaleProgress(startDate: Date, endDate: Date) {
+    const now = new Date();
+    const total = endDate.getTime() - startDate.getTime();
+    const progress = now.getTime() - startDate.getTime();
+    return Math.min(100, Math.max(0, (progress / total) * 100));
 }

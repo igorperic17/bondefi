@@ -8,50 +8,37 @@ import { ChevronRight, Rocket } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Progress } from "@/components/ui/progress"
 import HyperText from "@/components/magicui/hyper-text"
-
-interface Token {
-  id: string
-  image: string
-  name: string
-  totalSupply: string
-  launchDate: string
-  projectUrl: string
-  isTrending: boolean
-  isFundingReached: boolean
-}
+import { radix } from '@/lib/radix'
+import { TokenDetails } from '@/lib/radix/dto/tokenDetails'
 
 const TokenList: React.FC = () => {
-  const [tokens, setTokens] = useState<Token[]>([])
+  const [tokens, setTokens] = useState<TokenDetails[]>([])
   const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
   const [ref, inView] = useInView()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
   const fetchTokens = async () => {
+    if (!hasMore) return
+
     setIsLoading(true)
-    // Mock API call with a delay to simulate network request
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      const result = await radix.loadAllTokens(undefined)
+      const newTokens = result.items.map(item => item.token)
 
-    const newTokens: Token[] = Array.from({ length: 10 }, (_, i) => ({
-      id: `token-${page}-${i}`,
-      image: `https://picsum.photos/500/500?random=${page * 10 + i}`,
-      name: `Token ${page * 10 + i}`,
-      totalSupply: `${Math.floor(Math.random() * 1000000)} tokens`,
-      launchDate: new Date(
-        Date.now() - Math.random() * 10000000000
-      ).toLocaleDateString(),
-      projectUrl: `/token/${page * 10 + i}`,
-      isTrending: Math.random() > 0.5,
-      isFundingReached: Math.random() > 0.5,
-    }))
-
-    setTokens((prevTokens) => [...prevTokens, ...newTokens])
-    setPage((prevPage) => prevPage + 1)
-    setIsLoading(false)
+      setTokens((prevTokens) => [...prevTokens, ...newTokens])
+      setPage((prevPage) => prevPage + 1)
+      setHasMore(newTokens.length > 0)
+    } catch (error) {
+      console.error('Error fetching tokens:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   useEffect(() => {
-    if (inView) {
+    if (inView && !isLoading) {
       fetchTokens()
     }
   }, [inView])
@@ -61,7 +48,7 @@ const TokenList: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">All Projects</h1>
         <RainbowButton
-          onClick={() => router.push('/token/launch')}
+          onClick={() => router.push('/project/launch')}
         >
           <Rocket className="mr-2 h-4 w-4" />
           Launch your project
@@ -71,14 +58,14 @@ const TokenList: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 bor">
         {tokens.map((token) => (
           <TokenCard
-            key={token.projectUrl}
-            image={token.image}
+            key={token.id}
+            image={token.iconUrl}
             name={token.name}
-            totalSupply={token.totalSupply}
-            launchDate={token.launchDate}
-            projectUrl={token.projectUrl}
-            isTrending={token.isTrending}
-            isFundingReached={token.isFundingReached}
+            totalSupply="N/A" // This property is not available in the new token structure
+            launchDate={new Date(token.dateCreated).toLocaleDateString()}
+            projectUrl={`/project/${token.id}`}
+            isTrending={false} // You might want to implement a trending logic
+            isFundingReached={token.currentFunding >= token.fundraisingTarget}
           />
         ))}
       </div>
@@ -89,7 +76,7 @@ const TokenList: React.FC = () => {
           </div>
         </div>
       )}
-      <div ref={ref} className="h-10 mt-4" />
+      {hasMore && <div ref={ref} className="h-10 mt-4" />}
     </div>
   )
 }

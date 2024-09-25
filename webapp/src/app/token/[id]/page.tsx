@@ -86,7 +86,7 @@ export default function TokenPage() {
     return (
         <div>
             <Button
-                onClick={() => router.push('/token')}
+                onClick={() => router.push('/project')}
                 className="mb-4 flex items-center"
                 variant="outline"
             >
@@ -96,8 +96,8 @@ export default function TokenPage() {
                 {token && (
                     <>
                         <h1 className="text-3xl font-bold mb-6 text-white">{token.name} Overview</h1>
-                        <MagicCard className="mb-6 overflow-hidden shadow-lg rounded-xl transform transition duration-500 hover:scale-105 cursor-pointer flex flex-col relative border-0 shadow-gray-800 whitespace-nowrap">
-                            <BorderBeam size={250} duration={12} delay={9} />
+                        <div className="mb-6 overflow-hidden shadow-lg rounded-xl transform transition duration-500 hover:scale-105 cursor-pointer flex flex-col relative border-0 shadow-gray-800 whitespace-nowrap">
+
                             <div className="relative h-48 w-full rounded-t-xl overflow-hidden">
                                 <Image
                                     src={token.iconUrl || '/placeholder.png'}
@@ -137,7 +137,7 @@ export default function TokenPage() {
                                 </p>
                                 <p className="text-sm text-gray-400 mb-4 flex items-center">
                                     <InfoIcon className="w-4 h-4 mr-2" />
-                                    Factory Component: {token.factoryComponentId}
+                                    Factory Component: <a href={`https://dashboard.radixdlt.com/component/${token.factoryComponentId}`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline ml-1">{token.factoryComponentId}</a>
                                 </p>
                                 <div className="w-full mb-4">
                                     <p className="text-sm text-gray-400 mb-1">Sale Timeline</p>
@@ -150,7 +150,7 @@ export default function TokenPage() {
                                 </div>
                                 <a href={token.infoUrl} className="text-blue-400 hover:underline">More Info</a>
                             </div>
-                        </MagicCard>
+                        </div>
                         <div className="mb-6">
                             <Chart curve={curve} params={params} />
                         </div>
