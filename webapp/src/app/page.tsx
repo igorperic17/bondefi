@@ -7,7 +7,7 @@ import RadixSection from "@/components/radix";
 import RoadmapSection from "@/components/roadmap";
 import TeamSection from "@/components/team";
 import { TextRevealSection } from "@/components/text-reveal";
-import Hero from "@components/header";
+import Hero from "@components/hero";
 
 export default function Home() {
   return (
