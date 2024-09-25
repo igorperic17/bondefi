@@ -72,6 +72,7 @@ mod token {
 
             if self.collateral.amount() == self.presale_goal {
                 self.presale_success = true;
+                self.token_manager.set_metadata("presale_success", true);
             }
 
             (nft, collateral_bucket)

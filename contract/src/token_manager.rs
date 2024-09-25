@@ -74,6 +74,12 @@ mod token_manager {
             // REF: https://docs.radixdlt.com/docs/metadata-for-wallet-display
             let token_manager = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata! {
+                    roles {
+                        metadata_setter => rule!(require(global_caller(component_address)));
+                        metadata_setter_updater => rule!(deny_all);
+                        metadata_locker => rule!(deny_all);
+                        metadata_locker_updater => rule!(deny_all);
+                    },
                     init {
                         "name" => name.clone(), locked;
                         "symbol" => symbol, locked;
@@ -82,6 +88,10 @@ mod token_manager {
                         "icon_url" => icon_url.clone(), updatable;
                         "info_url" => info_url.clone(), updatable;
                         "collateral" => collateral, locked;
+                        "presale_start" => presale_start, locked;
+                        "presale_end" => presale_end, locked;
+                        "presale_goal" => presale_goal, locked;
+                        "presale_success" => false, updatable;
                         "factory_component" => component_address, locked;
                         "bonding_curve" => curve.to_string(), locked;
                         "created_by" => "BonDeFi", locked;
