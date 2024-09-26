@@ -54,7 +54,7 @@ export const InvestmentDialog: React.FC<InvestmentDialogProps> = ({
 
     const getInputLabel = () => {
         switch (actionType) {
-            case ActionType.Buy: return "Investment ($)";
+            case ActionType.Buy: return `Investment (${tokenSymbol})`;
             case ActionType.Sell:
             case ActionType.Refund: return `Amount (${tokenSymbol})`;
         }
@@ -96,12 +96,12 @@ export const InvestmentDialog: React.FC<InvestmentDialogProps> = ({
                             max={maxAmount}
                         />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
+                    {/* <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-right">{getResultLabel()}</Label>
                         <div className="col-span-3">
                             {resultAmount.toFixed(2)} {actionType === ActionType.Buy ? tokenSymbol : '$'}
                         </div>
-                    </div>
+                    </div> */}
                 </div>
                 <DialogFooter>
                     <Button type="submit" onClick={onConfirm}>{getConfirmButtonText()}</Button>

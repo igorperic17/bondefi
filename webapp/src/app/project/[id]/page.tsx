@@ -205,6 +205,7 @@ export default function TokenPage() {
         : false
     const isTrending = false // You might want to implement a trending logic
     const isFundingReached = token?.presaleSuccess
+    const isNotFunded = token && !token.presaleSuccess && new Date() > new Date(token.presaleEnd)
 
     const curve = useMemo(() => {
         // if (token && token.bondingCurve.length > 0) {
@@ -361,7 +362,7 @@ export default function TokenPage() {
                                             {token.name} ({token.symbol})
                                         </h2>
                                         <div className="flex flex-col space-y-1 items-end">
-                                            {(isNewToken || isTrending || isFundingReached) && (
+                                            {(isNewToken || isTrending || isFundingReached || isNotFunded) && (
                                                 <div className="bg-black bg-opacity-50 p-1 rounded-2xl space-y-1">
                                                     {isNewToken && (
                                                         <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center">
@@ -379,6 +380,12 @@ export default function TokenPage() {
                                                         <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center">
                                                             <DollarSignIcon className="w-4 h-4 mr-1" />
                                                             Funded
+                                                        </span>
+                                                    )}
+                                                    {isNotFunded && (
+                                                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center">
+                                                            <DollarSignIcon className="w-4 h-4 mr-1" />
+                                                            Not funded
                                                         </span>
                                                     )}
                                                 </div>

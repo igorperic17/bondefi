@@ -49,6 +49,7 @@ interface ChartProps {
 	params: number[]
 	target: number
 	symbol?: string
+	collateral?: string
 }
 
 const simulateTokenPurchase = (
@@ -95,7 +96,7 @@ export function Chart({ curve, params, target, symbol, collateral }: ChartProps)
 
 	useEffect(() => {
 		if (!chartRef.current) return
-		chart = createChart(chartRef.current, chartStyle(collateral || '', symbol || ''))
+		chart = createChart(chartRef.current, chartStyle(collateral || ''))
 
 		const series = chart.addAreaSeries({
 			topColor: 'rgba( 38, 166, 154, 0.38)',
