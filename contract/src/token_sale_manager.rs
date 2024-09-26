@@ -1,10 +1,17 @@
 use crate::bonding_curve::BondingCurve;
+use crate::staking::staking::Staking;
 use scrypto::prelude::*;
 
 #[derive(ScryptoSbor, NonFungibleData, ManifestSbor)]
 pub struct TokenMeta {
     pub collateral_invested: Decimal,
     pub tokens_reserved: Decimal,
+}
+
+// A struct to get permissions over staking contract
+#[derive(Debug, ScryptoSbor, NonFungibleData)]
+struct StakingBadge {
+    token_to_stake: ResourceAddress,
 }
 
 #[blueprint]
@@ -17,6 +24,10 @@ mod token {
         pub curve: BondingCurve,
         pub presale_start: Instant,
         pub presale_end: Instant,
+        pub lp_lock_until: Instant,
+        pub team_allocation: Decimal,
+        pub badge_address: ResourceAddress,
+        pub badge_id: NonFungibleLocalId,
         pub presale_goal: Decimal,
         pub presale_success: bool,
     }
@@ -78,15 +89,61 @@ mod token {
             (nft, collateral_bucket)
         }
 
-        pub fn end_presale(&mut self) {
+        pub fn list_and_enable_staking(&mut self) -> (Global<Staking>, Bucket, Bucket) {
             assert!(
                 Clock::current_time_rounded_to_seconds() > self.presale_end,
                 "Presale has not ended!"
             );
 
+            // TODO - check if badge is valid
+
             assert!(self.presale_success, "Presale has not succeeded :(");
             // TODO - use collateral to create LP and distribute allocations
+
+            // Step 1 - Mint promised tokens to "team" (TODO - speciy team percentage)
+            let team_allocation_bucket = self.token_manager.mint(self.team_allocation);
+
+            // Step 2 - Withdraw collateral from bonding curve
+            // let collateral_withdrawn = self.collateral.take(self.collateral.amount());
+
+            // Step 3 - Create dex pair and get LP tokens
+
+            // Step 4 - Lock LP tokens (TODO - add time to lock)
+
+            // Step 5 - create skaking contract
+
+            // Create a new resource for the EscrowBadge NFT and mint it to the caller
+            let badge_nft = ResourceBuilder::new_integer_non_fungible(OwnerRole::None)
+                .metadata(metadata!(
+                    init {
+                        "name" => "Staking Badge for token sale", locked;
+                    }
+                ))
+                .mint_roles(mint_roles!(
+                    minter => rule!(deny_all);
+                    minter_updater => rule!(deny_all);
+                ))
+                .burn_roles(burn_roles!(
+                    burner => rule!(allow_all); // TODO - allow only the escrow contract to burn?
+                    burner_updater => rule!(deny_all);
+                ))
+                .mint_initial_supply(vec![(
+                    IntegerNonFungibleLocalId::new(0),
+                    StakingBadge {
+                        token_to_stake: self.token_manager.address(),
+                    },
+                )]);
+
+            let staking = Staking::new(
+                badge_nft.resource_address(),
+                self.token_manager.address(),
+                0,
+            );
+
+            (staking, team_allocation_bucket, badge_nft.into())
         }
+
+        // TODO - method to get LP tokens after lock time, requires badge
 
         pub fn presale_nft_redeem(&mut self, nft: Bucket) -> Bucket {
             assert!(!nft.is_empty(), "Empty NFT sent!");
