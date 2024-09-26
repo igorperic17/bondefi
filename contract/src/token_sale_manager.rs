@@ -116,9 +116,11 @@ mod token {
 
             // Step 3 - Create dex pair and get LP tokens
             // We need x < y!
-            // TODO - calculate lp_token_allocation based on collateral and starting price
-            let lp_token_allocation = dec!(100);
-            let price_sqrt = pdec!(1.0);
+            // TODO - add as a parameter so it can be different from total sold amount, it doesnt affect pricing
+            let lp_token_allocation = self.presale_goal;
+            // Starting price sqrt, if for example we want starting price of 16 then we should set it to 4
+            // Since it's reversed we need to take the inverse, 1 / 4 = 0.25
+            let price_sqrt = pdec!(0.25);
             let (lp_pool, lp_bucket, x_bucket, y_bucket) =
                 PrecisionPool::instantiate_with_liquidity(
                     collateral_withdrawn,
