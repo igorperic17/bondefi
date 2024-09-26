@@ -24,7 +24,7 @@ export default function LaunchToken() {
 		projectUrl: '',
 		bondingCurveType: 0,
 		bondingCurveParameters: [0.4],
-		presaleGoal: '100',
+		presaleGoal: '10000',
 		saleStart: new Date(),
 		saleEnd: add(new Date(), { days: 30 }),
 	})

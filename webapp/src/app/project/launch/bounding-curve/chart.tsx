@@ -11,14 +11,14 @@ import {
 import { BoundingCurve } from '@/lib/bounding-curve'
 
 const formatCash = (n: number) => {
-	if (n < 1e3) return n
+	if (n < 1e3) return n.toFixed(0)
 	if (n >= 1e3 && n < 1e6) return +(n / 1e3).toFixed(1) + 'K'
 	if (n >= 1e6 && n < 1e9) return +(n / 1e6).toFixed(1) + 'M'
 	if (n >= 1e9 && n < 1e12) return +(n / 1e9).toFixed(1) + 'B'
 	if (n >= 1e12) return +(n / 1e12).toFixed(1) + 'T'
 }
 
-const chartStyle: DeepPartial<ChartOptions> = {
+const chartStyle: (unit: string) => DeepPartial<ChartOptions> = (unit) => ({
 	height: 400,
 	autoSize: true,
 	// handleScale: false,
@@ -27,11 +27,11 @@ const chartStyle: DeepPartial<ChartOptions> = {
 	crosshair: { mode: CrosshairMode.Magnet },
 	rightPriceScale: {},
 	localization: {
-		priceFormatter: (price: number) => price.toString(),
-		timeFormatter: (time: number) => time.toString(),
+		priceFormatter: (price: number) => price.toFixed(2),
+		timeFormatter: (time: number) => time.toFixed(0),
 	},
 	timeScale: {
-		tickMarkFormatter: (time: number) => time.toString(),
+		tickMarkFormatter: (time: number) => `${formatCash(time)} ${unit}`,
 		rightOffset: 0,
 		fixLeftEdge: true,
 	},
@@ -42,12 +42,13 @@ const chartStyle: DeepPartial<ChartOptions> = {
 		},
 		textColor: '#eee',
 	},
-}
+})
 
 interface ChartProps {
 	curve: BoundingCurve
 	params: number[]
 	target: number
+	symbol?: string
 }
 
 const simulateTokenPurchase = (
@@ -65,7 +66,7 @@ const simulateTokenPurchase = (
 	)
 }
 
-export function Chart({ curve, params, target }: ChartProps) {
+export function Chart({ curve, params, target, symbol }: ChartProps) {
 	const chartRef = useRef<HTMLDivElement>(null)
 	let chart: IChartApi | undefined
 
@@ -89,11 +90,14 @@ export function Chart({ curve, params, target }: ChartProps) {
 		return array
 	}
 
-	const data = useMemo(() => generateData(target), [curve, params, target])
+	const data = useMemo(
+		() => generateData(target + 1),
+		[curve, params, target, symbol],
+	)
 
 	useEffect(() => {
 		if (!chartRef.current) return
-		chart = createChart(chartRef.current, chartStyle)
+		chart = createChart(chartRef.current, chartStyle(symbol || ''))
 
 		const series = chart.addAreaSeries({
 			topColor: 'rgba( 38, 166, 154, 0.38)',

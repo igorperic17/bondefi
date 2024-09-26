@@ -73,6 +73,7 @@ export function BoundingCurve({ params, onSet }: BoundingCurveProps) {
 					curve={curve}
 					params={params.bondingCurveParameters}
 					target={Number.parseFloat(params.presaleGoal)}
+					symbol={params.symbol}
 				/>
 			</div>
 
