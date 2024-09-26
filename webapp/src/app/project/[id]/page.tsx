@@ -23,6 +23,7 @@ import {
     InfoIcon,
     StarIcon,
     TrendingUpIcon,
+    Loader,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
@@ -30,6 +31,7 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { featuredProjects } from '../featured-projects-mock'
 import { ActionType, InvestmentDialog } from './investment-dialog'
+import { useToast } from '@/hooks/use-toast'
 
 type ExtractedNFT = {
     resourceAddress: string;
@@ -41,7 +43,7 @@ export default function TokenPage() {
     const { id } = useParams()
     const router = useRouter()
     const [token, setToken] = useState<TokenDetails | null>(null)
-    const [tokens, setTokens] = useState<[StateEntityDetailsVaultResponseItem]>() // user's holdings
+    const [tokens, setTokens] = useState<number>() // user's holdings
     const [nfts, setNfts] =
         useState<[ExtractedNFT]>()
     const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -49,6 +51,8 @@ export default function TokenPage() {
     const [tokenAmount, setTokenAmount] = useState(0) // for investment dialog
     const [dialogAction, setDialogAction] = useState<ActionType>(ActionType.Buy)
     const [currentFunding, setCurrentFunding] = useState<number>(0)
+    const [claimingNFT, setClaimingNFT] = useState<string | null>(null)
+    const { toast } = useToast()
 
     const fetchTokenDetails = useCallback(async () => {
         if (id) {
@@ -117,6 +121,29 @@ export default function TokenPage() {
         [],
     )
 
+    const fetchUserTokenSupply = useCallback(
+        async (tokenDetails: TokenDetails | null) => {
+            if (!tokenDetails) return
+            try {
+                const account = await radix.getCurrentAccount()
+                const result = await radix.gateway.state.getEntityDetailsVaultAggregated(account)
+                const userTokenVault = get(result, 'fungible_resources.items', []).find(
+                    (resource) => resource.resource_address === tokenDetails.id
+                )
+                if (userTokenVault) {
+                    const amount = get(userTokenVault, 'vaults.items[0].amount', '0')
+                    setTokens(Number(amount))
+                } else {
+                    setTokens(0)
+                }
+            } catch (error) {
+                console.error('Error fetching current token supply in user wallet:', error)
+                setTokens(0)
+            }
+        },
+        [],
+    )
+
     const fetchNFTs = useCallback(async (tokenDetails: TokenDetails | null) => {
         if (!tokenDetails) return
         try {
@@ -171,6 +198,7 @@ export default function TokenPage() {
                 await Promise.all([
                     fetchCurrentFunding(tokenDetails),
                     fetchNFTs(tokenDetails),
+                    fetchUserTokenSupply(tokenDetails)
                 ])
             }
         }
@@ -259,6 +287,47 @@ export default function TokenPage() {
         setDialogAction(action)
         setIsDialogOpen(true)
     }
+
+    const handleClaimNFT = async (nft: ExtractedNFT) => {
+        if (!token) return;
+        setClaimingNFT(nft.tokenId);
+        try {
+            const accountId = await radix.getCurrentAccount();
+            const manifest = claimManifest(
+                token.factoryComponentId,
+                {
+                    accountId,
+                    nftTokenAddress: token.presaleTokenId,
+                    tokenId: nft.tokenId,
+                },
+            );
+
+            const result = await radix.toolkit.walletApi.sendTransaction({
+                transactionManifest: manifest,
+            });
+
+            const transactionId = result.unwrapOr(undefined)?.transactionIntentHash;
+            if (!transactionId) throw new Error(`Transaction failed: ${result}`);
+
+            toast({
+                title: "Claim Successful",
+                description: "Your NFT has been successfully claimed.",
+            });
+
+            // Refresh the NFTs
+            await fetchNFTs(token);
+            await fetchUserTokenSupply(token);
+        } catch (error) {
+            console.error('Error claiming NFT:', error);
+            toast({
+                title: "Claim Failed",
+                description: "There was an error claiming your NFT. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setClaimingNFT(null);
+        }
+    };
 
     return (
         <div>
@@ -397,7 +466,7 @@ export default function TokenPage() {
                                             You own
                                         </h3>
                                         <p className="text-6xl font-bold text-white mb-4">
-                                            {tokens ? tokens.length : 0} {token.symbol}
+                                            {tokens ? tokens.toFixed(2) : 0} {token.symbol}
                                         </p>
                                         <p className="text-6xl font-bold text-white mb-4">
                                             {nfts ? nfts.length : 0} NFTs
@@ -407,13 +476,17 @@ export default function TokenPage() {
                                         <Button
                                             className="w-full bg-blue-500 hover:bg-blue-600 text-white"
                                             onClick={() => openDialog(ActionType.Buy)}
-                                            disabled={isFundingReached}
-                                            title={isFundingReached ? "The project funding has ended." : undefined}
-
+                                            disabled={isFundingReached || (token.presaleEnd && new Date() > new Date(token.presaleEnd))}
+                                            title={
+                                                isFundingReached
+                                                    ? "The project funding has ended."
+                                                    : (token.presaleEnd && new Date() > new Date(token.presaleEnd))
+                                                        ? "The sale period has ended."
+                                                        : undefined
+                                            }
                                         >
-                                            {isFundingReached ? "Funding ended" : "Buy"}
+                                            {isFundingReached ? "Funding ended" : (token.presaleEnd && new Date() > new Date(token.presaleEnd)) ? "Sale ended" : "Buy"}
                                         </Button>
-                                        {/* <Button className="w-full bg-red-500 hover:bg-red-600 text-white" onClick={() => openDialog(ActionType.Sell)}>Claim</Button> */}
                                     </div>
                                 </div>
                             </div>
@@ -440,24 +513,17 @@ export default function TokenPage() {
                                             </div>
                                             <Button
                                                 className="bg-green-500 hover:bg-green-600 text-white"
-                                                onClick={async () => {
-                                                    const accountId = radix.getCurrentAccount()
-                                                    const manifest = claimManifest(
-                                                        token.factoryComponentId,
-                                                        {
-                                                            accountId,
-                                                            nftTokenAddress: token.presaleTokenId,
-                                                            tokenId: nft.tokenId,
-                                                        },
-                                                    )
-
-                                                    const result =
-                                                        await radix.toolkit.walletApi.sendTransaction({
-                                                            transactionManifest: manifest,
-                                                        })
-                                                }}
+                                                onClick={() => handleClaimNFT(nft)}
+                                                disabled={claimingNFT === nft.tokenId}
                                             >
-                                                Claim
+                                                {claimingNFT === nft.tokenId ? (
+                                                    <>
+                                                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                                        Claiming...
+                                                    </>
+                                                ) : (
+                                                    'Claim'
+                                                )}
                                             </Button>
                                         </div>
                                     ))}
