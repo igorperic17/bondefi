@@ -115,28 +115,6 @@ fn test_token_manager() {
     let ended_timestamp = (end.seconds_since_unix_epoch * 1000) + 1000;
     ledger.advance_to_round_at_timestamp(Round::of(3), ended_timestamp);
 
-    // Redeem the presale NFT after the presale is over
-    let manifest = ManifestBuilder::new()
-        .lock_fee_from_faucet()
-        .withdraw_non_fungibles_from_account(
-            account,
-            presale_nft_resource,
-            [NonFungibleLocalId::integer(0)],
-        )
-        .take_all_from_worktop(presale_nft_resource, "presale_nft_resource")
-        .call_method_with_name_lookup(sale_component, "presale_nft_redeem", |lookup| {
-            (lookup.bucket("presale_nft_resource"),)
-        })
-        .deposit_batch(account)
-        .build();
-
-    let receipt = ledger.execute_manifest(
-        manifest,
-        vec![NonFungibleGlobalId::from_public_key(&public_key)],
-    );
-    println!("{:?}\n", receipt);
-    receipt.expect_commit_success();
-
     // Create a new registry required for the pool
     let manifest = ManifestBuilder::new()
         .lock_fee_from_faucet()
@@ -178,6 +156,28 @@ fn test_token_manager() {
     let staking_receipt = receipt_success.new_resource_addresses()
         [receipt_success.new_resource_addresses().len() - 1];
 
+    // Redeem the presale NFT after the presale is over
+    let manifest = ManifestBuilder::new()
+        .lock_fee_from_faucet()
+        .withdraw_non_fungibles_from_account(
+            account,
+            presale_nft_resource,
+            [NonFungibleLocalId::integer(0)],
+        )
+        .take_all_from_worktop(presale_nft_resource, "presale_nft_resource")
+        .call_method_with_name_lookup(sale_component, "presale_nft_redeem", |lookup| {
+            (lookup.bucket("presale_nft_resource"),)
+        })
+        .deposit_batch(account)
+        .build();
+
+    let receipt = ledger.execute_manifest(
+        manifest,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
+    println!("{:?}\n", receipt);
+    receipt.expect_commit_success();
+
     // Stake the new token
     let manifest = ManifestBuilder::new()
         .lock_fee_from_faucet()
@@ -207,6 +207,12 @@ fn test_token_manager() {
         vec![NonFungibleGlobalId::from_public_key(&public_key)],
     );
     println!("{:?}\n", receipt);
+    // uncomment panic to validate the vault balance changes
+    // panic!(
+    //     "token{:?}: {:?}\n",
+    //     launched_token_resource,
+    //     receipt.expect_commit(true).vault_balance_changes()
+    // );
     receipt.expect_commit_success();
 
     // Distribute rewards to stakers
@@ -254,22 +260,3 @@ fn test_token_manager() {
     // );
     receipt.expect_commit_success();
 }
-
-// #[test]
-// fn test_hello_with_test_environment() -> Result<(), RuntimeError> {
-//     // Arrange
-//     let mut env = TestEnvironment::new();
-//     let package_address =
-//         PackageFactory::compile_and_publish(this_package!(), &mut env, CompileProfile::Fast)?;
-
-//     let mut hello = Hello::instantiate_hello(package_address, &mut env)?;
-
-//     // Act
-//     let bucket = hello.free_token(&mut env)?;
-
-//     // Assert
-//     let amount = bucket.amount(&mut env)?;
-//     assert_eq!(amount, dec!("1"));
-
-//     Ok(())
-// }
