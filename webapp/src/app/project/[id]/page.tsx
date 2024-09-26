@@ -178,7 +178,7 @@ export default function TokenPage() {
         try {
             const accountId = await radix.getCurrentAccount();
 
-            var manifest = undefined;
+            let manifest = undefined;
             if (dialogAction === ActionType.Buy) {
                 manifest = presaleNFTMintManifest(token.factoryComponentId, {
                     accountId,
