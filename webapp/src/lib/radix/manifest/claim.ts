@@ -1,27 +1,27 @@
 import { string } from '../utils'
 
 export interface BuyParams {
-    accountId: string
-    tokenAddress: string
-    amount: string
+	accountId: string
+	nftTokenAddress: string
+	tokenId: string
 }
 
-export const sellManifest = (componentId: string, props: BuyParams) => `
+export const claimManifest = (componentId: string, props: BuyParams) => `
     CALL_METHOD
         Address(${string(props.accountId)})
-        "withdraw"
-        Address(${string(props.tokenAddress)})
-        Decimal(${string(props.amount)})
+        "withdraw_non_fungibles"
+        Address(${string(props.nftTokenAddress)})
+        Array<NonFungibleLocalId>(NonFungibleLocalId("${props.tokenId}"))
     ;
 
     TAKE_ALL_FROM_WORKTOP
-        Address(${string(props.tokenAddress)})
+        Address(${string(props.nftTokenAddress)})
         Bucket("bucket")
     ;
 
     CALL_METHOD
         Address(${string(componentId)})
-        "sell"
+        "presale_nft_redeem"
         Bucket("bucket")
     ;
 

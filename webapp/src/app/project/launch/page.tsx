@@ -33,6 +33,7 @@ export default function LaunchToken() {
 		setLoading(true)
 		const newPrams = {
 			...params,
+			saleEnd: add(new Date(), { minutes: 5 }),
 			iconUrl: params.iconUrl || 'https://picsum.photos/600/600',
 		}
 		const result = await radix.creteToken(newPrams).finally(() => {
