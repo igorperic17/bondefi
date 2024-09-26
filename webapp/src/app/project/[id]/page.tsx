@@ -105,15 +105,9 @@ export default function TokenPage() {
             if (!tokenDetails) return
             try {
                 const result = await radix.gateway.state.getEntityDetailsVaultAggregated(tokenDetails.factoryComponentId)
-                const bucketVault = get(result, 'fungible_resources.items', []).find(
-                    (resource) => resource.resource_address === tokenDetails.presaleTokenId
-                )
-                if (bucketVault) {
-                    const amount = get(bucketVault, 'vaults.items[0].amount', '0')
-                    setCurrentFunding(Number(amount))
-                } else {
-                    setCurrentFunding(0)
-                }
+                console.log("FUNGIBLE: ", result)
+                const amount = get(result, 'fungible_resources.items[1].vaults.items[0].amount', '0')
+                setCurrentFunding(Number(amount))
             } catch (error) {
                 console.error('Error fetching current funding:', error)
             }
@@ -408,10 +402,10 @@ export default function TokenPage() {
                                         <p className="text-sm text-gray-400 mb-1 flex items-center">
                                             <DollarSignIcon className="w-4 h-4 mr-2" />
                                             Funding: ${currentFunding.toLocaleString()} / $
-                                            {token.fundraisingTarget.toLocaleString()}
+                                            {token.presaleGoal.toLocaleString()}
                                         </p>
                                         <Progress
-                                            value={(currentFunding / token.fundraisingTarget) * 100}
+                                            value={(currentFunding / Number(token.presaleGoal)) * 100}
                                             className="w-full h-2"
                                         />
                                     </div>
@@ -511,20 +505,28 @@ export default function TokenPage() {
                                                 </p>
                                                 <p className="text-sm text-gray-400">Value: 100 USD</p>
                                             </div>
-                                            <Button
-                                                className="bg-green-500 hover:bg-green-600 text-white"
-                                                onClick={() => handleClaimNFT(nft)}
-                                                disabled={claimingNFT === nft.tokenId}
-                                            >
-                                                {claimingNFT === nft.tokenId ? (
-                                                    <>
-                                                        <Loader className="mr-2 h-4 w-4 animate-spin" />
-                                                        Claiming...
-                                                    </>
-                                                ) : (
-                                                    'Claim'
+                                            <div className="flex items-center">
+
+                                                {token.presaleEnd && new Date() <= new Date(token.presaleEnd) && (
+                                                    <span className="ml-2 text-sm text-gray-400 mr-4">
+                                                        Claiming tokens not possible during the sale
+                                                    </span>
                                                 )}
-                                            </Button>
+                                                <Button
+                                                    className="bg-green-500 hover:bg-green-600 text-white"
+                                                    onClick={() => handleClaimNFT(nft)}
+                                                    disabled={claimingNFT === nft.tokenId || (token.presaleEnd && new Date() <= new Date(token.presaleEnd))}
+                                                >
+                                                    {claimingNFT === nft.tokenId ? (
+                                                        <>
+                                                            <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                                            Claiming...
+                                                        </>
+                                                    ) : (
+                                                        'Claim'
+                                                    )}
+                                                </Button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
