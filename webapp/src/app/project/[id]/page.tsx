@@ -16,13 +16,14 @@ import { InvestmentDialog, ActionType } from './investment-dialog'
 import { get } from 'lodash'
 import { presaleNFTMintManifest } from '@/lib/radix/manifest/buy'
 import { sellManifest } from '@/lib/radix/manifest/sell'
-import { SendTransactionItem } from '@radixdlt/radix-dapp-toolkit'
+import { NonFungibleResourcesCollectionItemVaultAggregated, StateEntityDetailsVaultResponseItem } from '@radixdlt/babylon-gateway-api-sdk'
 
 export default function TokenPage() {
     const { id } = useParams()
     const router = useRouter()
     const [token, setToken] = useState<TokenDetails | null>(null)
-    const [userShares, setUserShares] = useState<number>(0)
+    const [tokens, setTokens] = useState<[StateEntityDetailsVaultResponseItem]>()
+    const [nfts, setNfts] = useState<[NonFungibleResourcesCollectionItemVaultAggregated]>()
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [investmentAmount, setInvestmentAmount] = useState('')
     const [tokenAmount, setTokenAmount] = useState(0)
@@ -88,10 +89,39 @@ export default function TokenPage() {
             }
         }
 
+        const fetchNFTs = async () => {
+            try {
+                const ac = await radix.getCurrentAccount()
+                console.log('ac', ac)
+                const result = await radix.gateway.state.getEntityDetailsVaultAggregated(ac)
+                console.log(result);
+                // Parse the result to get the quantity of NFTs from the vault
+                const nftResources = get(result, 'non_fungible_resources.items', []);
+                const matchingNFTs = nftResources.filter(resource =>
+                    resource.resource_address === token?.factoryComponentId
+                );
+
+                if (matchingNFTs.length > 0) {
+                    const nftCount = matchingNFTs.reduce((total, resource) =>
+                        total + resource.vaults.items.reduce((vaultTotal, vault) =>
+                            vaultTotal + vault.total_count, 0), 0);
+
+                    setNfts(matchingNFTs as [NonFungibleResourcesCollectionItemVaultAggregated]);
+                    console.log(`Found ${nftCount} NFTs for the token`);
+                } else {
+                    console.log("No matching NFTs found");
+                    setNfts(undefined);
+                }
+            } catch (error) {
+                console.error('Error fetching NFTs:', error)
+            }
+        }
+
         fetchTokenDetails()
         fetchCurrentFunding()
+        fetchNFTs()
         // Fetch user shares (this is a placeholder, replace with actual API call)
-        setUserShares(100)
+        setTokens(undefined)
     }, [id])
 
     const isNewToken = token ? (new Date().getTime() - new Date(token.dateCreated).getTime()) < 30 * 24 * 60 * 60 * 1000 : false;
@@ -281,9 +311,11 @@ export default function TokenPage() {
                                     <div>
                                         <h3 className="text-2xl font-bold text-white mb-2">You own</h3>
                                         <p className="text-6xl font-bold text-white mb-4">
-                                            {userShares} {token.symbol}
+                                            {tokens ? tokens.length : 0} {token.symbol}
                                         </p>
-                                        <h3 className="text-2xl font-bold text-white mb-2">shares</h3>
+                                        <p className="text-6xl font-bold text-white mb-4">
+                                            {nfts ? nfts.length : 0} NFTs
+                                        </p>
                                     </div>
                                     <div className="flex flex-col space-y-2 ">
                                         <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={() => openDialog(ActionType.Buy)}>Buy</Button>
@@ -291,6 +323,27 @@ export default function TokenPage() {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                        <div className="mt-6 bg-gray-900 rounded-xl p-4">
+                            <h3 className="text-2xl font-bold text-white mb-4">Your NFTs</h3>
+                            {nfts && nfts.length > 0 ? (
+                                <div className="space-y-4">
+                                    {nfts.map((nft, index) => (
+                                        <div key={index} className="bg-gray-800 rounded-lg p-4 flex justify-between items-center">
+                                            <div>
+                                                <p className="text-white font-semibold">{nft.resource_address}</p>
+                                                {/* <p className="text-sm text-gray-400">Purchased: {new Date(nft.last_updated_at).toLocaleDateString()}</p>
+                                                <p className="text-sm text-gray-400">Value: ${nft.vaults.items[0].total_amount}</p> */}
+                                                <p className="text-sm text-gray-400">Purchased: Today</p>
+                                                <p className="text-sm text-gray-400">Value: 100 USD</p>
+                                            </div>
+                                            <Button className="bg-green-500 hover:bg-green-600 text-white">Claim</Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-gray-400">You don't own any NFTs for this token yet.</p>
+                            )}
                         </div>
                     </>
                 )}
