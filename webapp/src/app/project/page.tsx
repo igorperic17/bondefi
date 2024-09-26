@@ -82,7 +82,7 @@ const TokenList: React.FC = () => {
             launchDate={new Date(token.dateCreated).toLocaleDateString()}
             projectUrl={`/project/${token.id}`}
             isTrending={false} // You might want to implement a trending logic
-            isFundingReached={token.currentFunding >= token.fundraisingTarget}
+            isFundingReached={token.presaleSuccess}
           />
         ))}
       </div>

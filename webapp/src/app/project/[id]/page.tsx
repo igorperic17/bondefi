@@ -12,7 +12,11 @@ import { TokenDetails } from '@/lib/radix/dto/tokenDetails'
 import { Progress } from "@/components/ui/progress"
 import { radix } from '@/lib/radix'
 import { featuredProjects } from '../featured-projects-mock'
-import { InvestmentDialog } from './investment-dialog'
+import { InvestmentDialog, ActionType } from './investment-dialog'
+import { get } from 'lodash'
+import { presaleNFTMintManifest } from '@/lib/radix/manifest/buy'
+import { sellManifest } from '@/lib/radix/manifest/sell'
+import { SendTransactionItem } from '@radixdlt/radix-dapp-toolkit'
 
 export default function TokenPage() {
     const { id } = useParams()
@@ -22,7 +26,8 @@ export default function TokenPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [investmentAmount, setInvestmentAmount] = useState('')
     const [tokenAmount, setTokenAmount] = useState(0)
-    const [dialogAction, setDialogAction] = useState<'buy' | 'sell' | 'refund'>('buy')
+    const [dialogAction, setDialogAction] = useState<ActionType>(ActionType.Buy)
+    const [currentFunding, setCurrentFunding] = useState<number>(0)
 
     useEffect(() => {
         const fetchTokenDetails = async () => {
@@ -49,12 +54,14 @@ export default function TokenPage() {
                             iconUrl: featuredProject.image,
                             dateCreated: launchDate,
                             bondingCurve: ['Linear'],
-                            currentFunding: featuredProject.currentFunding,
                             fundraisingTarget: featuredProject.fundraisingTarget,
                             factoryComponentId: 'featured-component-id',
-                            saleStartDate: launchDate,
-                            saleEndDate: new Date(launchDate.getTime() + 30 * 24 * 60 * 60 * 1000),
+                            presaleStart: launchDate,
+                            presaleEnd: new Date(launchDate.getTime() + 30 * 24 * 60 * 60 * 1000),
                             infoUrl: featuredProject.projectUrl || '',
+                            collateralAddress: '', // Add this property
+                            presaleGoal: featuredProject.fundraisingTarget.toString(), // Convert to string to match expected type
+                            presaleSuccess: false, // Set an initial value for presaleSuccess
                         })
                     } else {
                         console.error('Token not found')
@@ -63,14 +70,33 @@ export default function TokenPage() {
             }
         }
 
+        const fetchCurrentFunding = async () => {
+            try {
+                const ac = await radix.getCurrentAccount()
+                console.log('ac', ac)
+                const result = await radix.gateway.state.getEntityDetailsVaultAggregated(ac)
+                // Parse the result to get the quantity from the vault representing the colateral resource
+                const adequateResourceVault = get(result, 'vaults', []).find(vault => get(vault, 'resourceAddress') === token?.factoryComponentId)
+                if (adequateResourceVault && typeof adequateResourceVault === 'object') {
+                    const amount = get(adequateResourceVault, 'amount')
+                    if (amount !== undefined) {
+                        setCurrentFunding(Number(amount))
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching current funding:', error)
+            }
+        }
+
         fetchTokenDetails()
+        fetchCurrentFunding()
         // Fetch user shares (this is a placeholder, replace with actual API call)
         setUserShares(100)
     }, [id])
 
     const isNewToken = token ? (new Date().getTime() - new Date(token.dateCreated).getTime()) < 30 * 24 * 60 * 60 * 1000 : false;
     const isTrending = false; // You might want to implement a trending logic
-    const isFundingReached = token ? token.currentFunding >= token.fundraisingTarget : false;
+    const isFundingReached = token?.presaleSuccess;
 
     const curve = useMemo(() => {
         if (token && token.bondingCurve.length > 0) {
@@ -91,7 +117,7 @@ export default function TokenPage() {
         // This is a simplified Bancor formula. You should replace this with the actual
         // formula based on the specific bonding curve and parameters of the token.
         const connectorWeight = 0.5; // This should come from the token's parameters
-        const supply = token ? token.currentFunding : 0;
+        const supply = currentFunding;
         const price = supply / (1 - connectorWeight);
         return investment / price;
     }
@@ -108,13 +134,44 @@ export default function TokenPage() {
         }
     }
 
-    const handleConfirmInvestment = () => {
-        // Implement the logic to confirm the investment
-        console.log('Investment confirmed:', investmentAmount);
-        setIsDialogOpen(false);
+    const handleConfirmInvestment = async () => {
+        if (!token) return;
+
+        try {
+            const accountId = await radix.getCurrentAccount();
+
+            var manifest = undefined;
+            if (dialogAction === ActionType.Buy) {
+                manifest = presaleNFTMintManifest(token.factoryComponentId, {
+                    accountId,
+                    collateralAddress: token.collateralAddress,
+                    amount: investmentAmount,
+                });
+            } else if (dialogAction === ActionType.Sell) {
+                manifest = sellManifest(token.factoryComponentId, {
+                    accountId,
+                    tokenAddress: token.id,
+                    amount: investmentAmount,
+                });
+            }
+            // TODO: add for refund
+            const result = await radix.toolkit.walletApi.sendTransaction({
+                transactionManifest: manifest!,
+            })
+            const transactionId = result.unwrapOr(undefined)?.transactionIntentHash
+            if (!transactionId) throw new Error(`Transaction failed: ${result}`)
+            const _committedDetails = radix.gateway.transaction.getCommittedDetails(transactionId)
+
+            console.log(`${dialogAction} confirmed:`, investmentAmount);
+            setIsDialogOpen(false);
+            // You might want to refresh the token details or user shares here
+        } catch (error) {
+            console.error(`Error during ${dialogAction}:`, error);
+            // Handle the error (e.g., show an error message to the user)
+        }
     }
 
-    const openDialog = (action: 'buy' | 'sell' | 'refund') => {
+    const openDialog = (action: ActionType) => {
         setDialogAction(action);
         setIsDialogOpen(true);
     }
@@ -193,20 +250,20 @@ export default function TokenPage() {
                                     </p>
                                     <p className="text-sm text-gray-400 mb-1 flex items-center">
                                         <DollarSignIcon className="w-4 h-4 mr-2" />
-                                        Funding: ${token.currentFunding.toLocaleString()} / ${token.fundraisingTarget.toLocaleString()}
+                                        Funding: ${currentFunding.toLocaleString()} / ${token.fundraisingTarget.toLocaleString()}
                                     </p>
                                     <p className="text-sm text-gray-400 mb-4 flex items-center">
                                         <InfoIcon className="w-4 h-4 mr-2" />
                                         Factory Component: <a href={`https://stokenet-dashboard.radixdlt.com/component/${token.factoryComponentId}/summary`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline ml-2">{token.factoryComponentId}</a>
                                     </p>
-                                    {token.saleStartDate && token.saleEndDate && (
+                                    {token.presaleStart && token.presaleEnd && (
                                         <div className="w-full mb-4">
                                             <p className="text-sm text-gray-400 mb-1">Sale Timeline</p>
-                                            <Progress value={getSaleProgress(new Date(token.saleStartDate), new Date(token.saleEndDate))} className="w-full" />
+                                            <Progress value={getSaleProgress(new Date(token.presaleStart), new Date(token.presaleEnd))} className="w-full" />
                                             <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                                <span>{new Date(token.saleStartDate).toLocaleDateString()}</span>
-                                                <span>{getSaleStatus(new Date(token.saleStartDate), new Date(token.saleEndDate))}</span>
-                                                <span>{new Date(token.saleEndDate).toLocaleDateString()}</span>
+                                                <span>{new Date(token.presaleStart).toLocaleDateString()}</span>
+                                                <span>{getSaleStatus(new Date(token.presaleStart), new Date(token.presaleEnd))}</span>
+                                                <span>{new Date(token.presaleEnd).toLocaleDateString()}</span>
                                             </div>
                                         </div>
                                     )}
@@ -219,9 +276,9 @@ export default function TokenPage() {
                                         </p>
                                     </div>
                                     <div className="flex flex-col space-y-2 ">
-                                        <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={() => openDialog('buy')}>Buy</Button>
-                                        <Button className="w-full bg-red-500 hover:bg-red-600 text-white" onClick={() => openDialog('sell')}>Sell</Button>
-                                        <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white" onClick={() => openDialog('refund')}>Refund</Button>
+                                        <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={() => openDialog(ActionType.Buy)}>Buy</Button>
+                                        <Button className="w-full bg-red-500 hover:bg-red-600 text-white" onClick={() => openDialog(ActionType.Sell)}>Sell</Button>
+                                        <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white" onClick={() => openDialog(ActionType.Refund)}>Refund</Button>
                                     </div>
                                 </div>
                             </div>
