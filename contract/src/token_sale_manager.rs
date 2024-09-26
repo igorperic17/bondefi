@@ -1,4 +1,5 @@
 use crate::bonding_curve::BondingCurve;
+use crate::pool::precision_pool::PrecisionPool;
 use crate::staking::staking::Staking;
 use scrypto::prelude::*;
 
@@ -19,6 +20,7 @@ mod token {
     struct TokenSaleManager {
         pub collateral: Vault,
         pub token_presale_vault: Vault,
+        pub token_lp_vault: Option<Vault>,
         pub presale_nft_manager: ResourceManager, // Handle presale NFTs
         pub token_manager: ResourceManager,       // Handle actual tokens
         pub curve: BondingCurve,
@@ -30,6 +32,8 @@ mod token {
         pub badge_id: NonFungibleLocalId,
         pub presale_goal: Decimal,
         pub presale_success: bool,
+        pub lp_pool: Option<Global<PrecisionPool>>,
+        pub staking: Option<Global<Staking>>,
     }
 
     impl TokenSaleManager {
@@ -89,7 +93,11 @@ mod token {
             (nft, collateral_bucket)
         }
 
-        pub fn list_and_enable_staking(&mut self) -> (Global<Staking>, Bucket, Bucket) {
+        pub fn list_and_enable_staking(
+            &mut self,
+            registry_address: ComponentAddress,
+            dapp_definition_address: ComponentAddress,
+        ) -> (Global<Staking>, Bucket, Bucket) {
             assert!(
                 Clock::current_time_rounded_to_seconds() > self.presale_end,
                 "Presale has not ended!"
@@ -104,13 +112,35 @@ mod token {
             let team_allocation_bucket = self.token_manager.mint(self.team_allocation);
 
             // Step 2 - Withdraw collateral from bonding curve
-            // let collateral_withdrawn = self.collateral.take(self.collateral.amount());
+            let collateral_withdrawn = self.collateral.take(self.collateral.amount());
 
             // Step 3 - Create dex pair and get LP tokens
+            // We need x < y!
+            // TODO - calculate lp_token_allocation based on collateral and starting price
+            let lp_token_allocation = dec!(100);
+            let price_sqrt = pdec!(1.0);
+            let (lp_pool, lp_bucket, x_bucket, y_bucket) =
+                PrecisionPool::instantiate_with_liquidity(
+                    collateral_withdrawn,
+                    self.token_manager.mint(lp_token_allocation),
+                    price_sqrt,
+                    1,
+                    dec!(0.01),
+                    dec!(0.03),
+                    registry_address,
+                    vec![],
+                    dapp_definition_address,
+                    -50000,
+                    50000,
+                );
 
             // Step 4 - Lock LP tokens (TODO - add time to lock)
-
-            // Step 5 - create skaking contract
+            self.token_lp_vault = Some(Vault::new(lp_bucket.resource_address()));
+            self.token_lp_vault.as_mut().unwrap().put(lp_bucket);
+            self.collateral.put(x_bucket);
+            self.token_presale_vault.put(y_bucket);
+            self.lp_pool = Some(lp_pool);
+            // Step 5 - create staking contract
 
             // Create a new resource for the EscrowBadge NFT and mint it to the caller
             let badge_nft = ResourceBuilder::new_integer_non_fungible(OwnerRole::None)
@@ -139,6 +169,7 @@ mod token {
                 self.token_manager.address(),
                 0,
             );
+            self.staking = Some(staking);
 
             (staking, team_allocation_bucket, badge_nft.into())
         }
