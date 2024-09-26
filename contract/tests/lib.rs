@@ -61,7 +61,7 @@ fn test_token_manager() {
             manifest_args!(
                 collateral,
                 BondingCurve::Bancor {
-                    reserve_ratio: dec!(0.5)
+                    reserve_ratio: dec!(0.5),
                 },
                 now,
                 end,
