@@ -2,6 +2,7 @@ use crate::bonding_curve::BondingCurve;
 use crate::pool::precision_pool::PrecisionPool;
 use crate::staking::staking::Staking;
 use scrypto::prelude::*;
+use scrypto_math::PowerDecimal;
 
 #[derive(ScryptoSbor, NonFungibleData, ManifestSbor)]
 pub struct TokenMeta {
@@ -117,10 +118,19 @@ mod token {
             // Step 3 - Create dex pair and get LP tokens
             // We need x < y!
             // TODO - add as a parameter so it can be different from total sold amount, it doesnt affect pricing
-            let lp_token_allocation = self.presale_goal;
+            let lp_token_allocation = self.token_manager.total_supply().unwrap();
             // Starting price sqrt, if for example we want starting price of 16 then we should set it to 4
-            // Since it's reversed we need to take the inverse, 1 / 4 = 0.25
-            let price_sqrt = pdec!(0.25);
+            // Since it's reversed we need to take the inverse, (1 / 16) ^ 0.5
+            let target_price = self.curve.token_price(
+                self.presale_goal,
+                self.token_manager.total_supply().unwrap(),
+            );
+            let reversed = dec!(1.0) / target_price;
+            let price_sqrt = PreciseDecimal::from(reversed.pow(dec!(0.5)).unwrap());
+            // panic!(
+            //     "target_price: {:?}, reversed: {:?}, price_sqrt: {:?}, presale_goal: {:?}, total_supply: {:?}",
+            //     target_price, reversed, price_sqrt, self.presale_goal, self.token_manager.total_supply().unwrap()
+            // );
             let (lp_pool, lp_bucket, x_bucket, y_bucket) =
                 PrecisionPool::instantiate_with_liquidity(
                     collateral_withdrawn,
