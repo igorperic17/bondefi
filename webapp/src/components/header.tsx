@@ -35,14 +35,14 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                                 <span className="text-xs text-white">Home</span>
                             </motion.div>
                             <motion.div
-                                onClick={() => router.push('/token')}
+                                onClick={() => router.push('/project')}
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ type: "spring", stiffness: 300 }}
-                                title="Tokens"
+                                title="Projects"
                                 className="flex flex-col items-center cursor-pointer"
                             >
                                 <CoinsIcon />
-                                <span className="text-xs text-white">Tokens</span>
+                                <span className="text-xs text-white">Projects</span>
                             </motion.div>
                             <motion.div
                                 onClick={() => router.push('/#')}
@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ className }) => {
                                 <span className="text-xs text-white">Dashboard</span>
                             </motion.div>
                             <motion.div
-                                onClick={() => router.push('/token/launch')}
+                                onClick={() => router.push('/project/launch')}
                                 whileHover={{ scale: 1.1 }}
                                 transition={{ type: "spring", stiffness: 300 }}
                                 title="Launch Token"

@@ -5,7 +5,8 @@ import AnimatedGradientText from "@/components/magicui/animated-gradient-text";
 import Image from 'next/image';
 import heroScreenshot from '../../public/hero.png';
 import { cn } from '@/lib/utils';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Rocket } from 'lucide-react';
+import { RainbowButton } from "@/components/magicui/rainbow-button";
 
 const Hero: React.FC = () => {
     return (
@@ -26,20 +27,21 @@ const Hero: React.FC = () => {
                 </AnimatedGradientText>
                 <h2 className="text-8xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-600">Radically Different</h2>
                 <h2 className="text-8xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-600">Decentralized Crowdfunding</h2>
-                <p className="text-lg text-gray-400 mb-8">Emit your token on a bonding curve! Guaranteed liquidity and solve the bad reputation problem of ICOs and IDOs.</p>
-                <div className="flex justify-center space-x-4">
-                    <button
-                        onClick={() => window.location.href = '/token/launch'}
-                        className="pl-6 pr-10 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 relative group"
-                    >
-                        Launch your token
-                        <span className="absolute right-4 top-1/2 transform -translate-y-1/2 transition duration-300 group-hover:translate-x-1">
-                            →
-                        </span>
-                    </button>
+                <p className="text-lg text-gray-400 mb-8">Emit your token on a bonding curve! Guaranteed liquidity and solve the bad reputation problem of ICOs and IDOs. Crowd sourced equity.</p>
+                <div className="flex justify-center space-x-6">
+                    <div className="mt-4">
+                        <RainbowButton
+                            onClick={() => window.location.href = '/token/launch'}
+                        // className="group"
+                        >
+                            <Rocket className="mr-2 h-4 w-4" />
+                            Launch your project
+                            <ChevronRight className="ml-2 h-4 w-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1.5" />
+                        </RainbowButton>
+                    </div>
                     <button
                         onClick={() => window.location.href = '/token'}
-                        className="pl-6 p-6 py-3 bg-transparent text-white font-bold rounded-lg shadow-lg border border-plate hover:bg-slate-700  transition duration-300 relative group"
+                        className="pl-6 p-6 py-3 m-3 bg-transparent text-white font-bold rounded-lg shadow-lg border border-plate hover:bg-slate-700  transition duration-300 relative group"
                     >
                         Explore projects
                     </button>

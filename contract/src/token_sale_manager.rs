@@ -9,6 +9,8 @@ pub struct TokenMeta {
 
 #[blueprint]
 mod token {
+    use crate::staking::staking::Staking;
+
     struct TokenSaleManager {
         pub collateral: Vault,
         pub token_presale_vault: Vault,
@@ -72,12 +74,13 @@ mod token {
 
             if self.collateral.amount() == self.presale_goal {
                 self.presale_success = true;
+                self.token_manager.set_metadata("presale_success", true);
             }
 
             (nft, collateral_bucket)
         }
 
-        pub fn end_presale(&mut self) {
+        pub fn list_and_enable_staking(&mut self) -> Global<Staking> {
             assert!(
                 Clock::current_time_rounded_to_seconds() > self.presale_end,
                 "Presale has not ended!"
@@ -85,6 +88,23 @@ mod token {
 
             assert!(self.presale_success, "Presale has not succeeded :(");
             // TODO - use collateral to create LP and distribute allocations
+
+            // Step 1 - Mint promised tokens to "team" (TODO - speciy team percentage)
+
+            // Step 2 - Withdraw collateral from bonding curve
+
+            // Step 3 - Create dex pair and get LP tokens
+
+            // Step 4 - Lock LP tokens (TODO - add time to lock)
+
+            // Step 5 - create skaking contract
+            let staking = Staking::new(
+                self.token_manager.address(), // TODO - use proper badge!
+                self.token_manager.address(),
+                0,
+            );
+
+            staking
         }
 
         pub fn presale_nft_redeem(&mut self, nft: Bucket) -> Bucket {

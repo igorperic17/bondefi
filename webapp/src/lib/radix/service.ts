@@ -4,13 +4,14 @@ import {
 	RadixNetwork,
 } from '@radixdlt/radix-dapp-toolkit'
 
-import { GatewayApiClient } from '@radixdlt/babylon-gateway-api-sdk'
+import { GatewayApiClient, StateNonFungibleDetailsResponseItem } from '@radixdlt/babylon-gateway-api-sdk'
 import { get } from 'lodash'
 import { extractTokenDetails } from './dto/tokenDetails'
 import {
 	type CreateTokenProps,
 	createTokenManifest,
 } from './manifest/create-token'
+import { radix } from '.'
 
 export interface RadixConfiguration {
 	networkId: number
@@ -79,7 +80,6 @@ export class RadixService {
 			props,
 		)
 
-		console.log('transactionManifest', transactionManifest)
 		const result = await this.toolkit.walletApi.sendTransaction({
 			transactionManifest,
 		})
@@ -125,5 +125,13 @@ export class RadixService {
 			totalCount: response.total_count,
 			items: await Promise.all(promises),
 		}
+	}
+
+	async claimTokens(tokenId: string) {
+
+	}
+
+	async getUserHoldings(tokenId: string) {
+
 	}
 }
