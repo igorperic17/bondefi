@@ -174,6 +174,26 @@ mod token {
             (staking, team_allocation_bucket, badge_nft.into())
         }
 
+        pub fn distribute_rewards(&mut self) -> Vec<Bucket> {
+            let lp_vault = &self.token_lp_vault.as_mut().unwrap().as_non_fungible();
+            let lp_proof =
+                lp_vault.create_proof_of_non_fungibles(&lp_vault.non_fungible_local_ids(100));
+            let (x_fees, y_fees) = self.lp_pool.unwrap().claim_fees(lp_proof);
+            // .call::<NonFungibleProof, (Bucket, Bucket)>("claim_fees", &lp_proof);
+            let mut dust = Vec::new();
+            if !x_fees.is_empty() {
+                self.staking.unwrap().airdrop(x_fees);
+            } else {
+                dust.push(x_fees);
+            }
+            if !y_fees.is_empty() {
+                self.staking.unwrap().airdrop(y_fees);
+            } else {
+                dust.push(y_fees);
+            }
+            dust
+        }
+
         // TODO - method to get LP tokens after lock time, requires badge
 
         pub fn presale_nft_redeem(&mut self, nft: Bucket) -> Bucket {

@@ -182,6 +182,51 @@ fn test_token_manager() {
         vec![NonFungibleGlobalId::from_public_key(&public_key)],
     );
     println!("{:?}\n", receipt);
+
+    let receipt_success = receipt.expect_commit(true);
+    let dex = receipt_success.new_component_addresses()[0];
+    let staking = receipt_success.new_component_addresses()[1];
+
+    let manifest = ManifestBuilder::new()
+        .lock_fee_from_faucet()
+        .withdraw_from_account(account, launched_token_resource, dec!("10"))
+        .take_all_from_worktop(launched_token_resource, "token")
+        .call_method_with_name_lookup(staking, "add_stake", |lookup| (lookup.bucket("token"),))
+        .deposit_batch(account)
+        .build();
+    let receipt = ledger.execute_manifest(
+        manifest,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
+    println!("{:?}\n", receipt);
+    receipt.expect_commit_success();
+
+    let manifest = ManifestBuilder::new()
+        .lock_fee_from_faucet()
+        .withdraw_from_account(account, collateral, dec!("100"))
+        .take_all_from_worktop(collateral, "collateral")
+        .call_method_with_name_lookup(dex, "swap", |lookup| (lookup.bucket("collateral"),))
+        .deposit_batch(account)
+        .build();
+
+    let receipt = ledger.execute_manifest(
+        manifest,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
+    println!("{:?}\n", receipt);
+    receipt.expect_commit_success();
+
+    let manifest = ManifestBuilder::new()
+        .lock_fee_from_faucet()
+        .call_method(sale_component, "distribute_rewards", manifest_args!())
+        .deposit_batch(account)
+        .build();
+
+    let receipt = ledger.execute_manifest(
+        manifest,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
+    println!("{:?}\n", receipt);
     receipt.expect_commit_success();
 }
 
