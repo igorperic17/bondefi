@@ -136,6 +136,7 @@ mod token_manager {
                 token_manager,
                 presale_nft_manager,
                 token_presale_vault: Vault::new(token_manager.address()),
+                token_lp_vault: None,
                 collateral: Vault::new(collateral),
                 presale_start,
                 presale_end,
@@ -145,6 +146,8 @@ mod token_manager {
                 badge_id: IntegerNonFungibleLocalId::new(self.index).into(),
                 presale_goal,
                 presale_success: false,
+                lp_pool: None,
+                staking: None,
             }
             .instantiate()
             .prepare_to_globalize(OwnerRole::None)

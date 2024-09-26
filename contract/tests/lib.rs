@@ -35,6 +35,7 @@ fn test_token_manager() {
 
     let now = Instant::new(ledger.get_current_proposer_timestamp_ms() - 1);
     let end = Instant::new(ledger.get_current_proposer_timestamp_ms() + 6000000);
+    let lp_lock_until = Instant::new(ledger.get_current_proposer_timestamp_ms() + 9000000);
 
     // Test the `create_token` method.
     // collateral: ResourceAddress,
@@ -65,9 +66,9 @@ fn test_token_manager() {
                 },
                 now,
                 end,
-                dec!(100), // presale_goal
-                end,       // lp_lock_until
-                dec!(100), // team_allocation
+                dec!(100),     // presale_goal
+                lp_lock_until, // lp_lock_until
+                dec!(0),       // team_allocation
                 "Test Token".to_string(),
                 "TEST".to_string(),
                 "This is a test token".to_string(),
@@ -151,7 +152,29 @@ fn test_token_manager() {
 
     let manifest = ManifestBuilder::new()
         .lock_fee_from_faucet()
-        .call_method(sale_component, "list_and_enable_staking", manifest_args!())
+        .call_function(
+            package_address,
+            "Registry",
+            "instantiate",
+            manifest_args!(presale_nft_resource, dec!(0), 10080 as u64, 20 as u64),
+        )
+        .deposit_batch(account)
+        .build();
+    let receipt = ledger.execute_manifest(
+        manifest,
+        vec![NonFungibleGlobalId::from_public_key(&public_key)],
+    );
+    println!("{:?}\n", receipt);
+    let registry = receipt.expect_commit(true).new_component_addresses()[0];
+    receipt.expect_commit_success();
+
+    let manifest = ManifestBuilder::new()
+        .lock_fee_from_faucet()
+        .call_method(
+            sale_component,
+            "list_and_enable_staking",
+            manifest_args!(registry, registry),
+        )
         .deposit_batch(account)
         .build();
     let receipt = ledger.execute_manifest(
