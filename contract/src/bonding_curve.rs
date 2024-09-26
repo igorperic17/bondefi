@@ -50,7 +50,7 @@ impl std::fmt::Display for BondingCurve {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             BondingCurve::Bancor { reserve_ratio } => {
-                write!(f, "reserve_ratio:{}", reserve_ratio)
+                write!(f, "0:{}", reserve_ratio)
             }
         }
     }

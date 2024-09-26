@@ -69,6 +69,18 @@ export default function Demo() {
 			>
 				Load Tokens
 			</Button>
+			<Button
+				onClick={async () => {
+					const result =
+						await radix.gateway.state.getEntityDetailsVaultAggregated(
+							'component_tdx_2_1czvcsewrnkad7ylzwceyfysc2znwver4rrnma58w7lcfeucee7w3sa',
+						)
+
+					console.log('result', result)
+				}}
+			>
+				asd
+			</Button>
 		</div>
 	)
 }
