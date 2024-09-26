@@ -16,13 +16,14 @@ import { InvestmentDialog, ActionType } from './investment-dialog'
 import { get } from 'lodash'
 import { presaleNFTMintManifest } from '@/lib/radix/manifest/buy'
 import { sellManifest } from '@/lib/radix/manifest/sell'
-import { SendTransactionItem } from '@radixdlt/radix-dapp-toolkit'
+import { NonFungibleResourcesCollectionItemVaultAggregated, StateEntityDetailsVaultResponseItem } from '@radixdlt/babylon-gateway-api-sdk'
 
 export default function TokenPage() {
     const { id } = useParams()
     const router = useRouter()
     const [token, setToken] = useState<TokenDetails | null>(null)
-    const [userShares, setUserShares] = useState<number>(0)
+    const [tokens, setTokens] = useState<[StateEntityDetailsVaultResponseItem]>()
+    const [nfts, setNfts] = useState<[NonFungibleResourcesCollectionItemVaultAggregated]>()
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [investmentAmount, setInvestmentAmount] = useState('')
     const [tokenAmount, setTokenAmount] = useState(0)
@@ -45,23 +46,23 @@ export default function TokenPage() {
                 if (!token) {
                     const featuredProject = featuredProjects.find(project => project.id === id)
                     if (featuredProject) {
-                        const launchDate = new Date(featuredProject.launchDate);
+                        const launchDate = new Date(featuredProject.dateCreated);
                         setToken({
                             id: featuredProject.id,
                             name: featuredProject.name,
-                            symbol: featuredProject.name.split(' ')[0].toUpperCase(),
-                            description: 'Featured project description',
-                            iconUrl: featuredProject.image,
+                            symbol: featuredProject.symbol,
+                            description: featuredProject.description,
+                            iconUrl: featuredProject.iconUrl,
                             dateCreated: launchDate,
-                            bondingCurve: ['Linear'],
+                            bondingCurve: featuredProject.bondingCurve,
                             fundraisingTarget: featuredProject.fundraisingTarget,
-                            factoryComponentId: 'featured-component-id',
-                            presaleStart: launchDate,
-                            presaleEnd: new Date(launchDate.getTime() + 30 * 24 * 60 * 60 * 1000),
-                            infoUrl: featuredProject.projectUrl || '',
-                            collateralAddress: '', // Add this property
-                            presaleGoal: featuredProject.fundraisingTarget.toString(), // Convert to string to match expected type
-                            presaleSuccess: false, // Set an initial value for presaleSuccess
+                            factoryComponentId: featuredProject.factoryComponentId,
+                            presaleStart: new Date(featuredProject.presaleStart),
+                            presaleEnd: new Date(featuredProject.presaleEnd),
+                            infoUrl: featuredProject.infoUrl,
+                            collateralAddress: featuredProject.collateralAddress,
+                            presaleGoal: featuredProject.presaleGoal,
+                            presaleSuccess: featuredProject.presaleSuccess
                         })
                     } else {
                         console.error('Token not found')
@@ -88,10 +89,39 @@ export default function TokenPage() {
             }
         }
 
+        const fetchNFTs = async () => {
+            try {
+                const ac = await radix.getCurrentAccount()
+                console.log('ac', ac)
+                const result = await radix.gateway.state.getEntityDetailsVaultAggregated(ac)
+                console.log(result);
+                // Parse the result to get the quantity of NFTs from the vault
+                const nftResources = get(result, 'non_fungible_resources.items', []);
+                const matchingNFTs = nftResources.filter(resource =>
+                    resource.resource_address === token?.factoryComponentId
+                );
+
+                if (matchingNFTs.length > 0) {
+                    const nftCount = matchingNFTs.reduce((total, resource) =>
+                        total + resource.vaults.items.reduce((vaultTotal, vault) =>
+                            vaultTotal + vault.total_count, 0), 0);
+
+                    setNfts(matchingNFTs as [NonFungibleResourcesCollectionItemVaultAggregated]);
+                    console.log(`Found ${nftCount} NFTs for the token`);
+                } else {
+                    console.log("No matching NFTs found");
+                    setNfts(undefined);
+                }
+            } catch (error) {
+                console.error('Error fetching NFTs:', error)
+            }
+        }
+
         fetchTokenDetails()
         fetchCurrentFunding()
+        fetchNFTs()
         // Fetch user shares (this is a placeholder, replace with actual API call)
-        setUserShares(100)
+        setTokens(undefined)
     }, [id])
 
     const isNewToken = token ? (new Date().getTime() - new Date(token.dateCreated).getTime()) < 30 * 24 * 60 * 60 * 1000 : false;
@@ -99,11 +129,13 @@ export default function TokenPage() {
     const isFundingReached = token?.presaleSuccess;
 
     const curve = useMemo(() => {
-        if (token && token.bondingCurve.length > 0) {
-            const curveType = token.bondingCurve[0].toLowerCase();
-            return BOUNDING_CURVES.find(c => c.name.toLowerCase() === curveType) || BOUNDING_CURVES[0];
-        }
-        return BOUNDING_CURVES[0];
+        // if (token && token.bondingCurve.length > 0) {
+        //     const curveType = token.bondingCurve[0].toLowerCase();
+        //     console.log(curveType);
+        //     console.log(BOUNDING_CURVES);
+        //     return BOUNDING_CURVES.find(c => c.name.toLowerCase() === curveType) || BOUNDING_CURVES[0];
+        // }
+        return BOUNDING_CURVES[2];
     }, [token]);
 
     const params = useMemo(() => {
@@ -114,12 +146,9 @@ export default function TokenPage() {
     }, [token]);
 
     const calculateTokenAmount = (investment: number) => {
-        // This is a simplified Bancor formula. You should replace this with the actual
-        // formula based on the specific bonding curve and parameters of the token.
-        const connectorWeight = 0.5; // This should come from the token's parameters
-        const supply = currentFunding;
-        const price = supply / (1 - connectorWeight);
-        return investment / price;
+        const tokenAmount = BOUNDING_CURVES[0].compute(investment, [parseFloat(token!.bondingCurve[1])])
+        console.log(tokenAmount);
+        return tokenAmount;
     }
 
     const handleInvestmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -190,7 +219,7 @@ export default function TokenPage() {
                     <>
                         <div className="mb-6 overflow-hidden shadow-lg rounded-xl transform flex flex-col relative border-0 shadow-gray-800 whitespace-nowrap">
                             <div className="flex">
-                                <div className="relative w-80 h-92 rounded-tl-xl overflow-hidden">
+                                <div className="relative w-80 h-80 rounded-tl-xl overflow-hidden">
                                     {token.iconUrl ? (
                                         <Image
                                             src={token.iconUrl}
@@ -248,10 +277,16 @@ export default function TokenPage() {
                                         <ChartLineIcon className="w-4 h-4 mr-2" />
                                         Bonding Curve: {token.bondingCurve.join(', ') || 'Not specified'}
                                     </p>
-                                    <p className="text-sm text-gray-400 mb-1 flex items-center">
-                                        <DollarSignIcon className="w-4 h-4 mr-2" />
-                                        Funding: ${currentFunding.toLocaleString()} / ${token.fundraisingTarget.toLocaleString()}
-                                    </p>
+                                    <div className="mb-2">
+                                        <p className="text-sm text-gray-400 mb-1 flex items-center">
+                                            <DollarSignIcon className="w-4 h-4 mr-2" />
+                                            Funding: ${currentFunding.toLocaleString()} / ${token.fundraisingTarget.toLocaleString()}
+                                        </p>
+                                        <Progress
+                                            value={(currentFunding / token.fundraisingTarget) * 100}
+                                            className="w-full h-2"
+                                        />
+                                    </div>
                                     <p className="text-sm text-gray-400 mb-4 flex items-center">
                                         <InfoIcon className="w-4 h-4 mr-2" />
                                         Factory Component: <a href={`https://stokenet-dashboard.radixdlt.com/component/${token.factoryComponentId}/summary`} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline ml-2">{token.factoryComponentId}</a>
@@ -268,39 +303,64 @@ export default function TokenPage() {
                                         </div>
                                     )}
                                 </div>
-                                <div className="p-4 flex w-3/12 flex-col justify-between bg-gray-900 rounded-xl">
+                                {/* <div className="p-4 flex flex-col justify-between bg-gray-900 rounded-xl">
+                                    <h2 className="text-2xl font-bold mb-4 text-white">Bonding Curve</h2>
+                                    <Chart curve={curve} params={params} />
+                                </div> */}
+                                <div className="p-4 flex flex-col justify-between bg-gray-900 rounded-xl ml-4 w-6/12">
                                     <div>
-                                        <h3 className="text-xl font-bold text-white mb-2">You own</h3>
-                                        <p className="text-3xl font-bold text-white mb-4">
-                                            {userShares} {token.symbol}
+                                        <h3 className="text-2xl font-bold text-white mb-2">You own</h3>
+                                        <p className="text-6xl font-bold text-white mb-4">
+                                            {tokens ? tokens.length : 0} {token.symbol}
+                                        </p>
+                                        <p className="text-6xl font-bold text-white mb-4">
+                                            {nfts ? nfts.length : 0} NFTs
                                         </p>
                                     </div>
                                     <div className="flex flex-col space-y-2 ">
                                         <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={() => openDialog(ActionType.Buy)}>Buy</Button>
-                                        <Button className="w-full bg-red-500 hover:bg-red-600 text-white" onClick={() => openDialog(ActionType.Sell)}>Sell</Button>
-                                        <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white" onClick={() => openDialog(ActionType.Refund)}>Refund</Button>
+                                        {/* <Button className="w-full bg-red-500 hover:bg-red-600 text-white" onClick={() => openDialog(ActionType.Sell)}>Claim</Button> */}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div className="mb-6">
-                            <h2 className="text-2xl font-bold mb-4 text-white">Bonding Curve</h2>
-                            <Chart curve={curve} params={params} />
+                        <div className="mt-6 bg-gray-900 rounded-xl p-4">
+                            <h3 className="text-2xl font-bold text-white mb-4">Your NFTs</h3>
+                            {nfts && nfts.length > 0 ? (
+                                <div className="space-y-4">
+                                    {nfts.map((nft, index) => (
+                                        <div key={index} className="bg-gray-800 rounded-lg p-4 flex justify-between items-center">
+                                            <div>
+                                                <p className="text-white font-semibold">{nft.resource_address}</p>
+                                                {/* <p className="text-sm text-gray-400">Purchased: {new Date(nft.last_updated_at).toLocaleDateString()}</p>
+                                                <p className="text-sm text-gray-400">Value: ${nft.vaults.items[0].total_amount}</p> */}
+                                                <p className="text-sm text-gray-400">Purchased: Today</p>
+                                                <p className="text-sm text-gray-400">Value: 100 USD</p>
+                                            </div>
+                                            <Button className="bg-green-500 hover:bg-green-600 text-white">Claim</Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-gray-400">You don't own any NFTs for this token yet.</p>
+                            )}
                         </div>
                     </>
                 )}
             </div>
-            <InvestmentDialog
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                tokenName={token?.name || ''}
-                tokenSymbol={token?.symbol || ''}
-                amount={investmentAmount}
-                resultAmount={tokenAmount}
-                onAmountChange={handleInvestmentChange}
-                onConfirm={handleConfirmInvestment}
-                actionType={dialogAction}
-            />
+            {isDialogOpen && (
+                <InvestmentDialog
+                    isOpen={isDialogOpen}
+                    onOpenChange={setIsDialogOpen}
+                    tokenName={token?.name || ''}
+                    tokenSymbol={token?.symbol || ''}
+                    amount={investmentAmount}
+                    resultAmount={tokenAmount}
+                    onAmountChange={handleInvestmentChange}
+                    onConfirm={handleConfirmInvestment}
+                    actionType={dialogAction}
+                />
+            )}
         </div>
     )
 }

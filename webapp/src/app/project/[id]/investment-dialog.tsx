@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BOUNDING_CURVES } from '@/lib/bounding-curve';
 
 export enum ActionType {
     Buy = 'buy',
