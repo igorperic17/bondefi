@@ -22,6 +22,7 @@ impl BondingCurve {
                     * ((Decimal::ONE + amount_paid / (collateral_reserves + *reserve_ratio))
                         .pow(*reserve_ratio)
                         .unwrap()
+                        - Decimal::ONE)
             }
         }
     }
