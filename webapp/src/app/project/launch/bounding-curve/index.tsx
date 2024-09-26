@@ -10,6 +10,7 @@ import {
 
 import { BOUNDING_CURVES } from '@/lib/bounding-curve'
 import { CreateTokenProps } from '@/lib/radix/manifest/create-token'
+import { getReserveTokenByAddress } from '@/lib/reserve-tokens'
 import { Chart } from './chart'
 
 interface BoundingCurveProps {
@@ -53,9 +54,12 @@ export function BoundingCurve({ params, onSet }: BoundingCurveProps) {
 			</div>
 			{curve.parameters.map((param, i) => (
 				<div className="mb-4 w-full space-y-2" key={param}>
-					<Label>{param}</Label>
+					<Label>{param} ({params.bondingCurveParameters[i]})</Label>
 					<Input
-						type="number"
+						type="range"
+						min={0.01}
+						max={1.00}
+						step={0.01}
 						value={params.bondingCurveParameters[i]}
 						placeholder={param}
 						onChange={(e) => {
@@ -73,6 +77,8 @@ export function BoundingCurve({ params, onSet }: BoundingCurveProps) {
 					curve={curve}
 					params={params.bondingCurveParameters}
 					target={Number.parseFloat(params.presaleGoal)}
+					symbol={params.symbol}
+					collateral={getReserveTokenByAddress(params.collateralAddress)?.symbol}
 				/>
 			</div>
 

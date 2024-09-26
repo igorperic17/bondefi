@@ -1,21 +1,12 @@
 import { DatePicker } from '@/components/datepicker'
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from '@/components/ui/popover'
-import {
 	Select,
 	SelectContent,
-	SelectGroup,
 	SelectItem,
-	SelectLabel,
 	SelectTrigger,
-	SelectValue,
+	SelectValue
 } from '@/components/ui/select'
 import type { CreateTokenProps } from '@/lib/radix/manifest/create-token'
 import { RESERVE_TOKENS, getReserveTokenByAddress } from '@/lib/reserve-tokens'
