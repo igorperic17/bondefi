@@ -27,7 +27,7 @@ const Hero: React.FC = () => {
                 </AnimatedGradientText>
                 <h2 className="text-8xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-600">Radically Different</h2>
                 <h2 className="text-8xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-600">Decentralized Crowdfunding</h2>
-                <p className="text-lg text-gray-400 mb-8">Emit your token on a bonding curve! Guaranteed liquidity and solve the bad reputation problem of ICOs and IDOs. Crowd sourced equity.</p>
+                <p className="text-lg text-gray-400 mb-8 w-3/5 mx-auto">Emit your token on a bonding curve and collect equity for your project in a fair, safe and transparent way! Enjoy guaranteed liquidity and avoid the bad reputation problem of ICOs.</p>
                 <div className="flex justify-center space-x-6">
                     <div className="mt-4">
                         <RainbowButton

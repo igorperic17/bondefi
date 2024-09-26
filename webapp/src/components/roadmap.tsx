@@ -12,6 +12,7 @@ const roadmapData = [
             { name: 'Website launch', completed: true },
             { name: 'DEX integration (Ociswap)', completed: true },
             { name: 'Cross-chain integration', completed: false },
+            { name: 'Radix DLT developer grant application', completed: false },
         ],
     },
     {
@@ -19,7 +20,8 @@ const roadmapData = [
         deadline: 'Q1 2025',
         progress: 0,
         features: [
-            { name: 'Governance implementation', completed: false },
+            { name: 'Winning the Radix DLT development grant', completed: false },
+            { name: 'Governance implementation (DAO for founders)', completed: false },
             { name: 'Smart contract audit', completed: false },
             { name: 'BDF Token launch', completed: false },
             { name: 'Partnerships', completed: false },
@@ -27,11 +29,12 @@ const roadmapData = [
     },
     {
         phase: 'Phase 3: Expansion',
-        deadline: 'Q3 2025',
+        deadline: 'Q2 2025',
         progress: 0,
         features: [
             { name: 'Community building', completed: false },
             { name: 'Global marketing campaign', completed: false },
+            { name: 'Support for other distributed ecosystems (EVM, Near, Cosmos)', completed: false },
         ],
     },
 ];

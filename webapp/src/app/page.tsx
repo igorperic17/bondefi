@@ -14,7 +14,7 @@ export default function Home() {
     <>
       <Hero />
       {/* <TokenSlider tokens={mockTokens} /> */}
-      <TextRevealSection text="Imagine launching an instantly tradable token with built-in guaranteed liquitidy... forever." />
+      <TextRevealSection text="Imagine launching an instantly tradable token with built-in guaranteed liquidity... forever." />
       <BondingSection />
       <Features />
       <RadixSection />
