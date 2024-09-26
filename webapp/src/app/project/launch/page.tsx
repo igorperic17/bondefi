@@ -6,7 +6,7 @@ import type { CreateTokenProps } from '@/lib/radix/manifest/create-token'
 import { add } from 'date-fns'
 import { get } from 'lodash'
 import { useRouter } from 'next/navigation'
-import React, { useState, ChangeEvent } from 'react'
+import React, { useState } from 'react'
 import { BoundingCurve } from './bounding-curve'
 import { TokenForm } from './form'
 
@@ -23,7 +23,7 @@ export default function LaunchToken() {
 		tagList: [],
 		projectUrl: '',
 		bondingCurveType: 0,
-		bondingCurveParameters: [1],
+		bondingCurveParameters: [0.4],
 		presaleGoal: '100',
 		saleStart: new Date(),
 		saleEnd: add(new Date(), { days: 30 }),
