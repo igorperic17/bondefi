@@ -4,14 +4,17 @@ import {
 	RadixNetwork,
 } from '@radixdlt/radix-dapp-toolkit'
 
-import { GatewayApiClient, StateNonFungibleDetailsResponseItem } from '@radixdlt/babylon-gateway-api-sdk'
+import {
+	GatewayApiClient,
+	StateNonFungibleDetailsResponseItem,
+} from '@radixdlt/babylon-gateway-api-sdk'
 import { get } from 'lodash'
+import { radix } from '.'
 import { extractTokenDetails } from './dto/tokenDetails'
 import {
 	type CreateTokenProps,
 	createTokenManifest,
 } from './manifest/create-token'
-import { radix } from '.'
 
 export interface RadixConfiguration {
 	networkId: number
@@ -128,11 +131,7 @@ export class RadixService {
 		}
 	}
 
-	async claimTokens(tokenId: string) {
+	async claimTokens(tokenId: string) {}
 
-	}
-
-	async getUserHoldings(tokenId: string) {
-
-	}
+	async getUserHoldings(tokenId: string) {}
 }

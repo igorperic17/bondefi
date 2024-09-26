@@ -39,7 +39,7 @@ export default function Demo() {
 			<Button
 				onClick={async () => {
 					const id =
-						'resource_tdx_2_1tkv70vqy4ngajk7vuchkcp6settaqrzt23ca0mv3wvad7dmcuxv8jf'
+						'resource_tdx_2_1tk335d8qgwl4k4u6ra5mqckhpv4983lcx7hetmee59uxusfrex7rgc'
 
 					const result = await radix.getTokenDetails(id)
 

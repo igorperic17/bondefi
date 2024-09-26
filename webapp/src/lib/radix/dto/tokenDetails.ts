@@ -22,6 +22,7 @@ export interface TokenDetails {
 	fundraisingTarget: number
 	collateralAddress: string
 
+	presaleTokenId: string
 	presaleStart: Date
 	presaleEnd: Date
 	presaleGoal: string
@@ -45,6 +46,7 @@ export const extractTokenDetails = (state: StateEntityMetadataPageResponse) =>
 			extractProperty(state, 'fundraising_target', '0'),
 		),
 		collateralAddress: extractProperty(state, 'collateral', ''),
+		presaleTokenId: extractProperty(state, 'presale_token', ''),
 		presaleStart: new Date(extractProperty(state, 'presale_start', '')),
 		presaleEnd: new Date(extractProperty(state, 'presale_end', '')),
 		presaleGoal: extractProperty(state, 'presale_goal', '0'),
@@ -92,6 +94,8 @@ export const createMockToken = (id: string): TokenDetails => {
 		presaleGoal: fundraisingTarget.toString(),
 		collateralAddress:
 			'resource_sim1q0a7ecesc8jvwd9xvsncz9q8ra4gmhc2m8e9z8ys5crg3r9nz', // RDX
+		presaleTokenId:
+			'resource_sim1q0a7ecesc8jvwd9xvsncz9q8ra4gmhc2m8e9z8ys5crg3r9nz',
 		presaleStart,
 		presaleEnd,
 		presaleSuccess: false,

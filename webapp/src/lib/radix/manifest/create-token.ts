@@ -37,6 +37,8 @@ export const createTokenManifest = (
             ${dateToUnixTimestamp(props.saleStart)}i64 
             ${dateToUnixTimestamp(props.saleEnd)}i64
             Decimal(${string(props.presaleGoal)})
+            9999999999i64
+            Decimal("0")
             ${string(props.name)}
             ${string(props.symbol)}
             ${string(props.description)}
