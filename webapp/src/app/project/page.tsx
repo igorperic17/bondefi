@@ -61,13 +61,13 @@ const TokenList: React.FC = () => {
         {featuredProjects.map((project) => (
           <TokenCard
             key={project.id}
-            image={project.image}
+            image={project.iconUrl}
             name={project.name}
-            totalSupply={project.totalSupply}
-            launchDate={project.launchDate}
-            projectUrl={project.projectUrl}
-            isTrending={project.isTrending}
-            isFundingReached={project.isFundingReached}
+            totalSupply={project.presaleGoal}
+            launchDate={project.dateCreated.toISOString()}
+            projectUrl={project.infoUrl}
+            isTrending={false} // You might want to implement a trending logic
+            isFundingReached={project.presaleSuccess}
           />
         ))}
       </div>
