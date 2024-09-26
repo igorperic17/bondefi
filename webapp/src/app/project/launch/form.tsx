@@ -43,6 +43,19 @@ export function TokenForm({ params, onSet }: TokenFormProps) {
 			</div>
 
 			<div className="mb-4 w-full space-y-2">
+				<Label>
+					Funding Target (
+					{getReserveTokenByAddress(params.collateralAddress)?.symbol})
+				</Label>
+				<Input
+					type="number"
+					value={params.presaleGoal}
+					placeholder="e.g. 100000"
+					onChange={(e) => set({ presaleGoal: e.target.value })}
+				/>
+			</div>
+
+			<div className="mb-4 w-full space-y-2">
 				<Label>Symbol</Label>
 				<Input
 					type="text"
@@ -105,19 +118,6 @@ export function TokenForm({ params, onSet }: TokenFormProps) {
 				<DatePicker
 					date={params.saleEnd}
 					setDate={(saleEnd) => set({ saleEnd })}
-				/>
-			</div>
-
-			<div className="mb-4 w-full space-y-2">
-				<Label>
-					Funding Target (
-					{getReserveTokenByAddress(params.collateralAddress)?.symbol})
-				</Label>
-				<Input
-					type="number"
-					value={params.presaleGoal}
-					placeholder="e.g. 100000"
-					onChange={(e) => set({ presaleGoal: e.target.value })}
 				/>
 			</div>
 		</div>

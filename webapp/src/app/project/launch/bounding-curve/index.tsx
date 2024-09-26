@@ -69,7 +69,21 @@ export function BoundingCurve({ params, onSet }: BoundingCurveProps) {
 
 			{/*  CHART */}
 			<div className="bg-black pa-4 rounded-lg border mb-5 overflow-hidden">
-				<Chart curve={curve} params={params.bondingCurveParameters} />
+				<Chart
+					curve={curve}
+					params={params.bondingCurveParameters}
+					target={Number.parseFloat(params.presaleGoal)}
+				/>
+			</div>
+
+			<div className="mb-4 w-full space-y-2">
+				<Label>Funding Target</Label>
+				<Input
+					type="number"
+					value={params.presaleGoal}
+					placeholder="e.g. 100000"
+					onChange={(e) => set({ presaleGoal: e.target.value })}
+				/>
 			</div>
 		</div>
 	)
