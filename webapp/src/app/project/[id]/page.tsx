@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress"
 import { radix } from '@/lib/radix'
 import { featuredProjects } from '../featured-projects-mock'
 import { InvestmentDialog, ActionType } from './investment-dialog'
-import { get } from 'lodash'
+import { get, result } from 'lodash'
 import { presaleNFTMintManifest } from '@/lib/radix/manifest/buy'
 import { sellManifest } from '@/lib/radix/manifest/sell'
 import { NonFungibleResourcesCollectionItemVaultAggregated, StateEntityDetailsVaultResponseItem } from '@radixdlt/babylon-gateway-api-sdk'
@@ -29,100 +29,109 @@ export default function TokenPage() {
     const [tokenAmount, setTokenAmount] = useState(0)
     const [dialogAction, setDialogAction] = useState<ActionType>(ActionType.Buy)
     const [currentFunding, setCurrentFunding] = useState<number>(0)
+    const fetchTokenDetails = useCallback(async () => {
+        if (id) {
+            try {
+                const result = await radix.getTokenDetails(id as string)
+                if (result) {
+                    console.log("SETTING TOKEN", result);
+                    setToken(result)
+                    return result;  // Return the result for further use
+                }
+            } catch (error) {
+                console.error('Error fetching token details:', error)
+            }
+
+            // If not found in radix or if there was an error, check featured projects
+            const featuredProject = featuredProjects.find(project => project.id === id)
+            if (featuredProject) {
+                const launchDate = new Date(featuredProject.dateCreated);
+                const tokenDetails = {
+                    id: featuredProject.id,
+                    name: featuredProject.name,
+                    symbol: featuredProject.symbol,
+                    description: featuredProject.description,
+                    iconUrl: featuredProject.iconUrl,
+                    dateCreated: launchDate,
+                    bondingCurve: featuredProject.bondingCurve,
+                    fundraisingTarget: featuredProject.fundraisingTarget,
+                    factoryComponentId: featuredProject.factoryComponentId,
+                    presaleStart: new Date(featuredProject.presaleStart),
+                    presaleEnd: new Date(featuredProject.presaleEnd),
+                    infoUrl: featuredProject.infoUrl,
+                    collateralAddress: featuredProject.collateralAddress,
+                    presaleGoal: featuredProject.presaleGoal,
+                    presaleSuccess: featuredProject.presaleSuccess,
+                    presaleTokenId: featuredProject.presaleTokenId
+                }
+                setToken(tokenDetails)
+                return tokenDetails;
+            } else {
+                console.error('Token not found')
+                return null;
+            }
+        }
+    }, [id])
+
+    const fetchCurrentFunding = useCallback(async (tokenDetails: TokenDetails | null) => {
+        if (!tokenDetails) return;
+        try {
+            const ac = await radix.getCurrentAccount()
+            console.log('ac', ac)
+            const result = await radix.gateway.state.getEntityDetailsVaultAggregated(ac)
+            const adequateResourceVault = get(result, 'vaults', []).find(vault => get(vault, 'resourceAddress') === tokenDetails.factoryComponentId)
+            if (adequateResourceVault && typeof adequateResourceVault === 'object') {
+                const amount = get(adequateResourceVault, 'amount')
+                if (amount !== undefined) {
+                    setCurrentFunding(Number(amount))
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching current funding:', error)
+        }
+    }, [])
+
+    const fetchNFTs = useCallback(async (tokenDetails: TokenDetails | null) => {
+        if (!tokenDetails) return;
+        try {
+            const ac = await radix.getCurrentAccount()
+            console.log('ac', ac)
+            const result = await radix.gateway.state.getEntityDetailsVaultAggregated(ac)
+            console.log(result);
+            console.log("token: ", tokenDetails);
+            const nftResources = get(result, 'non_fungible_resources.items', []);
+            const matchingNFTs = nftResources.filter(resource =>
+                resource.resource_address === tokenDetails.presaleTokenId
+            );
+
+            if (matchingNFTs.length > 0) {
+                const nftCount = matchingNFTs.reduce((total, resource) =>
+                    total + resource.vaults.items.reduce((vaultTotal, vault) =>
+                        vaultTotal + vault.total_count, 0), 0);
+
+                setNfts(matchingNFTs as [NonFungibleResourcesCollectionItemVaultAggregated]);
+                console.log(`Found ${nftCount} NFTs for the token`);
+            } else {
+                console.log("No matching NFTs found");
+                setNfts(undefined);
+            }
+        } catch (error) {
+            console.error('Error fetching NFTs:', error)
+        }
+    }, [])
 
     useEffect(() => {
-        const fetchTokenDetails = async () => {
-            if (id) {
-                try {
-                    const result = await radix.getTokenDetails(id as string)
-                    if (result) {
-                        setToken(result)
-                    }
-                } catch (error) {
-                    console.error('Error fetching token details:', error)
-                }
-
-                // If not found in radix or if there was an error, check featured projects
-                if (!token) {
-                    const featuredProject = featuredProjects.find(project => project.id === id)
-                    if (featuredProject) {
-                        const launchDate = new Date(featuredProject.dateCreated);
-                        setToken({
-                            id: featuredProject.id,
-                            name: featuredProject.name,
-                            symbol: featuredProject.symbol,
-                            description: featuredProject.description,
-                            iconUrl: featuredProject.iconUrl,
-                            dateCreated: launchDate,
-                            bondingCurve: featuredProject.bondingCurve,
-                            fundraisingTarget: featuredProject.fundraisingTarget,
-                            factoryComponentId: featuredProject.factoryComponentId,
-                            presaleStart: new Date(featuredProject.presaleStart),
-                            presaleEnd: new Date(featuredProject.presaleEnd),
-                            infoUrl: featuredProject.infoUrl,
-                            collateralAddress: featuredProject.collateralAddress,
-                            presaleGoal: featuredProject.presaleGoal,
-                            presaleSuccess: featuredProject.presaleSuccess
-                        })
-                    } else {
-                        console.error('Token not found')
-                    }
-                }
+        const fetchData = async () => {
+            const tokenDetails = await fetchTokenDetails();
+            if (tokenDetails) {
+                await Promise.all([
+                    fetchCurrentFunding(tokenDetails),
+                    fetchNFTs(tokenDetails)
+                ]);
             }
-        }
-
-        const fetchCurrentFunding = async () => {
-            try {
-                const ac = await radix.getCurrentAccount()
-                console.log('ac', ac)
-                const result = await radix.gateway.state.getEntityDetailsVaultAggregated(ac)
-                // Parse the result to get the quantity from the vault representing the colateral resource
-                const adequateResourceVault = get(result, 'vaults', []).find(vault => get(vault, 'resourceAddress') === token?.factoryComponentId)
-                if (adequateResourceVault && typeof adequateResourceVault === 'object') {
-                    const amount = get(adequateResourceVault, 'amount')
-                    if (amount !== undefined) {
-                        setCurrentFunding(Number(amount))
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching current funding:', error)
-            }
-        }
-
-        const fetchNFTs = async () => {
-            try {
-                const ac = await radix.getCurrentAccount()
-                console.log('ac', ac)
-                const result = await radix.gateway.state.getEntityDetailsVaultAggregated(ac)
-                console.log(result);
-                // Parse the result to get the quantity of NFTs from the vault
-                const nftResources = get(result, 'non_fungible_resources.items', []);
-                const matchingNFTs = nftResources.filter(resource =>
-                    resource.resource_address === token?.factoryComponentId
-                );
-
-                if (matchingNFTs.length > 0) {
-                    const nftCount = matchingNFTs.reduce((total, resource) =>
-                        total + resource.vaults.items.reduce((vaultTotal, vault) =>
-                            vaultTotal + vault.total_count, 0), 0);
-
-                    setNfts(matchingNFTs as [NonFungibleResourcesCollectionItemVaultAggregated]);
-                    console.log(`Found ${nftCount} NFTs for the token`);
-                } else {
-                    console.log("No matching NFTs found");
-                    setNfts(undefined);
-                }
-            } catch (error) {
-                console.error('Error fetching NFTs:', error)
-            }
-        }
-
-        fetchTokenDetails()
-        fetchCurrentFunding()
-        fetchNFTs()
-        // Fetch user shares (this is a placeholder, replace with actual API call)
-        setTokens(undefined)
-    }, [id])
+        };
+        fetchData();
+    }, [id, fetchTokenDetails, fetchCurrentFunding, fetchNFTs])
 
     const isNewToken = token ? (new Date().getTime() - new Date(token.dateCreated).getTime()) < 30 * 24 * 60 * 60 * 1000 : false;
     const isTrending = false; // You might want to implement a trending logic

@@ -19,7 +19,8 @@ export const featuredProjects: TokenDetails[] = [
         infoUrl: '/project/featured1',
         collateralAddress: 'resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag',
         presaleGoal: '500000',
-        presaleSuccess: true
+        presaleSuccess: true,
+        presaleTokenId: 'resource_sim1qzj5ufnuawjqgvpgvj9g7gj0hhcg4q0e5r7zqm3s2pgqvqxj'
     },
     {
         id: 'featured2',
@@ -36,7 +37,8 @@ export const featuredProjects: TokenDetails[] = [
         infoUrl: '/project/featured2',
         collateralAddress: 'resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag',
         presaleGoal: '1000000',
-        presaleSuccess: false
+        presaleSuccess: false,
+        presaleTokenId: 'resource_sim1qzj5ufnuawjqgvpgvj9g7gj0hhcg4q0e5r7zqm3s2pgqvqxj'
     },
     {
         id: 'featured3',
@@ -53,7 +55,8 @@ export const featuredProjects: TokenDetails[] = [
         infoUrl: '/project/featured3',
         collateralAddress: 'resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag',
         presaleGoal: '2000000',
-        presaleSuccess: false
+        presaleSuccess: false,
+        presaleTokenId: 'resource_sim1qzj5ufnuawjqgvpgvj9g7gj0hhcg4q0e5r7zqm3s2pgqvqxj'
     },
     {
         id: 'featured4',
@@ -70,7 +73,8 @@ export const featuredProjects: TokenDetails[] = [
         infoUrl: '/project/featured4',
         collateralAddress: 'resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag',
         presaleGoal: '750000',
-        presaleSuccess: true
+        presaleSuccess: true,
+        presaleTokenId: 'resource_sim1qzj5ufnuawjqgvpgvj9g7gj0hhcg4q0e5r7zqm3s2pgqvqxj'
     },
     {
         id: 'featured5',
@@ -87,6 +91,7 @@ export const featuredProjects: TokenDetails[] = [
         infoUrl: '/project/featured5',
         collateralAddress: 'resource_sim1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqu57yag',
         presaleGoal: '5000000',
-        presaleSuccess: false
+        presaleSuccess: false,
+        presaleTokenId: 'resource_sim1qzj5ufnuawjqgvpgvj9g7gj0hhcg4q0e5r7zqm3s2pgqvqxj'
     }
 ];
