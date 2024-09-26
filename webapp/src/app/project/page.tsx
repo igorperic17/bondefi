@@ -56,21 +56,6 @@ const TokenList: React.FC = () => {
           <ChevronRight className="ml-2 h-4 w-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1.5" />
         </RainbowButton>
       </div>
-      <h2 className="text-2xl font-bold mb-4">Featured Projects</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 mb-8">
-        {featuredProjects.map((project) => (
-          <TokenCard
-            key={project.id}
-            image={project.iconUrl}
-            name={project.name}
-            totalSupply={project.presaleGoal}
-            launchDate={project.dateCreated.toISOString()}
-            projectUrl={project.infoUrl}
-            isTrending={false} // You might want to implement a trending logic
-            isFundingReached={project.presaleSuccess}
-          />
-        ))}
-      </div>
       <h2 className="text-2xl font-bold mb-4">All Projects</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 bor">
         {tokens.map((token) => (
