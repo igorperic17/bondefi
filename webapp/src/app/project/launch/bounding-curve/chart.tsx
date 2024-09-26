@@ -27,8 +27,8 @@ const chartStyle: (unit: string) => DeepPartial<ChartOptions> = (unit) => ({
 	crosshair: { mode: CrosshairMode.Magnet },
 	rightPriceScale: {},
 	localization: {
-		priceFormatter: (price: number) => price.toFixed(2),
-		timeFormatter: (time: number) => time.toFixed(0),
+		priceFormatter: (price: number) => `${price.toFixed(2)} ${unit}`,
+		timeFormatter: (time: number) => `${time.toFixed(0)} ${unit}`,
 	},
 	timeScale: {
 		tickMarkFormatter: (time: number) => `${formatCash(time)} ${unit}`,
@@ -66,7 +66,7 @@ const simulateTokenPurchase = (
 	)
 }
 
-export function Chart({ curve, params, target, symbol }: ChartProps) {
+export function Chart({ curve, params, target, symbol, collateral }: ChartProps) {
 	const chartRef = useRef<HTMLDivElement>(null)
 	let chart: IChartApi | undefined
 
@@ -79,8 +79,6 @@ export function Chart({ curve, params, target, symbol }: ChartProps) {
 		for (let i = 0; i < 1000; i++) {
 			const x = i * step
 			const pruchaseCount = simulateTokenPurchase(step, x, accY, params[0])
-			// const [tokensBought, y] = curve.compute(x, accY, params)
-			// accY += tokensBought
 			const price = x / ((accY + pruchaseCount) * params[0])
 
 			accY += pruchaseCount
@@ -92,12 +90,12 @@ export function Chart({ curve, params, target, symbol }: ChartProps) {
 
 	const data = useMemo(
 		() => generateData(target + 1),
-		[curve, params, target, symbol],
+		[curve, params, target, symbol, collateral],
 	)
 
 	useEffect(() => {
 		if (!chartRef.current) return
-		chart = createChart(chartRef.current, chartStyle(symbol || ''))
+		chart = createChart(chartRef.current, chartStyle(collateral || '', symbol || ''))
 
 		const series = chart.addAreaSeries({
 			topColor: 'rgba( 38, 166, 154, 0.38)',
@@ -111,7 +109,7 @@ export function Chart({ curve, params, target, symbol }: ChartProps) {
 		series.setData(data as never)
 		chart
 			.timeScale()
-			.setVisibleRange({ from: 0, to: parseFloat(target) } as never)
+			.setVisibleRange({ from: 0, to: target } as never)
 
 		return () => {
 			chart?.remove()
