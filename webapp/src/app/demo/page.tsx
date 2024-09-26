@@ -29,8 +29,6 @@ export default function Demo() {
 						},
 					)
 
-					console.log('manifest', manifest)
-
 					radix.toolkit.walletApi.sendTransaction({
 						transactionManifest: manifest,
 					})
@@ -53,6 +51,18 @@ export default function Demo() {
 			<Button
 				onClick={async () => {
 					const result = await radix.loadAllTokens()
+
+					console.log('result', result)
+				}}
+			>
+				Load Tokens
+			</Button>
+			<Button
+				onClick={async () => {
+					const ac = await radix.getCurrentAccount()
+					console.log('ac', ac)
+					const result =
+						await radix.gateway.state.getEntityDetailsVaultAggregated(ac)
 
 					console.log('result', result)
 				}}

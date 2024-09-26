@@ -1,10 +1,19 @@
 'use client'
 
 import { Chart } from '@/app/project/launch/bounding-curve/chart'
+import { featuredProjects } from '@/app/project/page'
 import { BorderBeam } from '@/components/magicui/border-beam'
 import { MagicCard } from '@/components/magicui/magic-card'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 import { BOUNDING_CURVES, BoundingCurve } from '@/lib/bounding-curve'
 import { radix } from '@/lib/radix'
@@ -25,21 +34,61 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
-import React, { useState, useEffect, useMemo } from 'react'
+import type React from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 export default function TokenPage() {
 	const { id } = useParams()
 	const router = useRouter()
 	const [token, setToken] = useState<TokenDetails | null>(null)
+	const [userHoldings, setUserHoldings] = useState(0)
+	const [isDialogOpen, setIsDialogOpen] = useState(false)
+	const [purchaseAmount, setPurchaseAmount] = useState('')
+	const [estimatedTokens, setEstimatedTokens] = useState(0)
 
 	useEffect(() => {
 		const fetchTokenDetails = async () => {
 			if (id) {
 				try {
 					const result = await radix.getTokenDetails(id as string)
-					setToken(result)
+					if (result) {
+						setToken(result)
+						// Fetch user holdings here
+						const holdings = await radix.getUserHoldings(id as string)
+						// setUserHoldings(holdings)
+					}
 				} catch (error) {
 					console.error('Error fetching token details:', error)
+				}
+
+				// If not found in radix or if there was an error, check featured projects
+				if (!token) {
+					const featuredProject = featuredProjects.find(
+						(project) => project.id === id,
+					)
+					if (featuredProject) {
+						const launchDate = new Date(featuredProject.launchDate)
+						setToken({
+							id: featuredProject.id,
+							name: featuredProject.name,
+							symbol: featuredProject.name.split(' ')[0].toUpperCase(),
+							description: 'Featured project description',
+							iconUrl: featuredProject.image,
+							dateCreated: launchDate,
+							bondingCurve: ['Linear'],
+							presaleGoal: featuredProject.currentFunding.toString(),
+							fundraisingTarget: featuredProject.fundraisingTarget,
+							factoryComponentId: 'featured-component-id',
+							presaleStart: new Date(),
+							presaleEnd: new Date(
+								launchDate.getTime() + 30 * 24 * 60 * 60 * 1000,
+							),
+							infoUrl: featuredProject.projectUrl || '',
+							presaleSuccess: false,
+						})
+					} else {
+						console.error('Token not found')
+					}
 				}
 			}
 		}
@@ -52,10 +101,11 @@ export default function TokenPage() {
 			30 * 24 * 60 * 60 * 1000
 		: false
 	const isTrending = false // You might want to implement a trending logic
-	const isFundingReached = token ? 0 >= token.fundraisingTarget : false
+	const isFundingReached = token
+		? Number.parseInt(token.presaleGoal) >= token.fundraisingTarget
+		: false
 
 	const curve = useMemo(() => {
-		console.log(token?.bondingCurve)
 		if (token && token.bondingCurve.length > 0) {
 			const curveType = token.bondingCurve[0].toLowerCase()
 			return (
@@ -73,6 +123,95 @@ export default function TokenPage() {
 		return [1]
 	}, [token])
 
+	const handleBuy = () => {
+		setIsDialogOpen(true)
+	}
+
+	const handlePurchaseConfirm = async () => {
+		if (token) {
+			try {
+				// await radix.buyToken(token.id, Number(purchaseAmount))
+				// Update user holdings after purchase
+				const newHoldings = await radix.getUserHoldings(token.id)
+				// setUserHoldings(newHoldings)
+				setIsDialogOpen(false)
+			} catch (error) {
+				console.error('Error purchasing token:', error)
+			}
+		}
+	}
+
+	const handlePurchaseAmountChange = (
+		e: React.ChangeEvent<HTMLInputElement>,
+	) => {
+		setPurchaseAmount(e.target.value)
+		// Calculate estimated tokens based on bonding curve
+		if (token) {
+			const estimated = calculateEstimatedTokens(
+				Number(e.target.value),
+				token.bondingCurve,
+			)
+			setEstimatedTokens(estimated)
+		}
+	}
+
+	const calculateEstimatedTokens = (amount: number, bondingCurve: string[]) => {
+		// Implement the calculation based on the bonding curve
+		// This is a placeholder implementation
+		return amount * 100
+	}
+
+	const renderUserPanel = () => {
+		if (!token) return null
+
+		const now = new Date()
+		const saleStartDate = token.presaleStart
+		const saleEndDate = token.presaleEnd
+
+		if (now < saleStartDate) {
+			return (
+				<Card className="mb-4">
+					<CardContent>
+						<p>Sale has not started yet</p>
+						<p>Starts on: {saleStartDate.toLocaleDateString()}</p>
+					</CardContent>
+				</Card>
+			)
+		}
+
+		if (now > saleEndDate || isFundingReached) {
+			if (userHoldings > 0) {
+				return (
+					<Card className="mb-4">
+						<CardContent>
+							<p>Your holdings: {userHoldings} tokens</p>
+							<Button onClick={() => radix.claimTokens(token.id)}>
+								Claim Tokens
+							</Button>
+						</CardContent>
+					</Card>
+				)
+			} else {
+				return (
+					<Card className="mb-4">
+						<CardContent>
+							<p>Sale has ended</p>
+						</CardContent>
+					</Card>
+				)
+			}
+		}
+
+		return (
+			<Card className="mb-4">
+				<CardContent>
+					<p>Your holdings: {userHoldings} tokens</p>
+					<Button onClick={handleBuy}>Buy Tokens</Button>
+				</CardContent>
+			</Card>
+		)
+	}
+
 	return (
 		<div>
 			<Button
@@ -85,9 +224,6 @@ export default function TokenPage() {
 			<div className="p-4 w-full">
 				{token && (
 					<>
-						<h1 className="text-3xl font-bold mb-6 text-white">
-							{token.name} Overview
-						</h1>
 						<div className="mb-6 overflow-hidden shadow-lg rounded-xl transform flex flex-col relative border-0 shadow-gray-800 whitespace-nowrap">
 							<div className="flex">
 								<div className="relative w-80 h-92 rounded-tl-xl overflow-hidden">
@@ -153,7 +289,8 @@ export default function TokenPage() {
 									</p>
 									<p className="text-sm text-gray-400 mb-1 flex items-center">
 										<DollarSignIcon className="w-4 h-4 mr-2" />
-										Funding: ${0} / ${token.presaleGoal}
+										Funding: ${token.presaleGoal.toLocaleString()} / $
+										{token.fundraisingTarget.toLocaleString()}
 									</p>
 									<p className="text-sm text-gray-400 mb-4 flex items-center">
 										<InfoIcon className="w-4 h-4 mr-2" />
@@ -180,11 +317,18 @@ export default function TokenPage() {
 												className="w-full"
 											/>
 											<div className="flex justify-between text-xs text-gray-400 mt-1">
-												<span>{token.presaleStart.toLocaleDateString()}</span>
 												<span>
-													{getSaleStatus(token.presaleStart, token.presaleEnd)}
+													{new Date(token.presaleStart).toLocaleDateString()}
 												</span>
-												<span>{token.presaleEnd.toLocaleDateString()}</span>
+												<span>
+													{getSaleStatus(
+														new Date(token.presaleStart),
+														new Date(token.presaleEnd),
+													)}
+												</span>
+												<span>
+													{new Date(token.presaleEnd).toLocaleDateString()}
+												</span>
 											</div>
 										</div>
 									)}
@@ -197,9 +341,28 @@ export default function TokenPage() {
 							</h2>
 							<Chart curve={curve} params={params} />
 						</div>
+						{renderUserPanel()}
 					</>
 				)}
 			</div>
+			<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Buy Tokens</DialogTitle>
+						<DialogDescription>
+							Enter the amount you want to invest
+						</DialogDescription>
+					</DialogHeader>
+					<Input
+						type="number"
+						value={purchaseAmount}
+						onChange={handlePurchaseAmountChange}
+						placeholder="Enter amount"
+					/>
+					<p>Estimated tokens: {estimatedTokens}</p>
+					<Button onClick={handlePurchaseConfirm}>Confirm Purchase</Button>
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }

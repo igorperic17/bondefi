@@ -13,6 +13,7 @@ export interface TokenDetails {
 	factoryComponentId: string
 	dateCreated: Date
 	fundraisingTarget: number
+	collateralAddress: string
 
 	presaleStart: Date
 	presaleEnd: Date
@@ -36,7 +37,7 @@ export const extractTokenDetails = (state: StateEntityMetadataPageResponse) =>
 		fundraisingTarget: Number(
 			extractProperty(state, 'fundraising_target', '0'),
 		),
-
+		collateralAddress: extractProperty(state, 'collateral', ''),
 		presaleStart: new Date(extractProperty(state, 'presale_start', '')),
 		presaleEnd: new Date(extractProperty(state, 'presale_end', '')),
 		presaleGoal: extractProperty(state, 'presale_goal', '0'),
