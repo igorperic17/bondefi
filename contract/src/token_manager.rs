@@ -9,6 +9,7 @@ pub struct BonDeFiBadge {
     name: String,
     factory_component: ComponentAddress,
     resource_address: ResourceAddress,
+    // TODO - add success status and update accordingly
 }
 
 #[blueprint]
@@ -60,6 +61,8 @@ mod token_manager {
             presale_start: Instant,
             presale_end: Instant,
             presale_goal: Decimal,
+            lp_lock_until: Instant,
+            team_allocation: Decimal,
 
             name: String,
             symbol: String,
@@ -136,6 +139,10 @@ mod token_manager {
                 collateral: Vault::new(collateral),
                 presale_start,
                 presale_end,
+                lp_lock_until,
+                team_allocation,
+                badge_address: self.badge_manager.address(),
+                badge_id: IntegerNonFungibleLocalId::new(self.index).into(),
                 presale_goal,
                 presale_success: false,
             }

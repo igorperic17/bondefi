@@ -37,6 +37,22 @@ fn test_token_manager() {
     let end = Instant::new(ledger.get_current_proposer_timestamp_ms() + 6000000);
 
     // Test the `create_token` method.
+    // collateral: ResourceAddress,
+    //         curve: BondingCurve,
+
+    //         // Presale parameters
+    //         presale_start: Instant,
+    //         presale_end: Instant,
+    //         presale_goal: Decimal,
+    //         lp_lock_until: Instant,
+    //         team_allocation: Decimal,
+
+    //         name: String,
+    //         symbol: String,
+    //         description: String,
+    //         tags: Vec<String>,
+    //         icon_url: String,
+    //         info_url: String,
     let manifest = ManifestBuilder::new()
         .lock_fee_from_faucet()
         .call_method(
@@ -49,7 +65,9 @@ fn test_token_manager() {
                 },
                 now,
                 end,
-                dec!(100),
+                dec!(100), // presale_goal
+                end,       // lp_lock_until
+                dec!(100), // team_allocation
                 "Test Token".to_string(),
                 "TEST".to_string(),
                 "This is a test token".to_string(),
