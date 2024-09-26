@@ -74,6 +74,27 @@ mod token_manager {
             let (address_reservation, component_address) =
                 Runtime::allocate_component_address(TokenSaleManager::blueprint_id());
 
+            let presale_nft_manager =
+                ResourceBuilder::new_integer_non_fungible::<TokenMeta>(OwnerRole::None)
+                    .metadata(metadata! {
+                        init {
+                            "name" => format!("{} Presale", name), locked;
+                            "description" => description.clone(), updatable;
+                            "icon_url" => icon_url.clone(), updatable;
+                            "factory_component" => component_address, locked;
+                            "bonding_curve" => curve.to_string(), locked;
+                        }
+                    })
+                    .mint_roles(mint_roles! {
+                        minter => rule!(require(global_caller(component_address)));
+                        minter_updater => rule!(deny_all);
+                    })
+                    .burn_roles(burn_roles!(
+                        burner => rule!(require(global_caller(component_address)));
+                        burner_updater => rule!(deny_all);
+                    ))
+                    .create_with_no_initial_supply();
+
             // REF: https://docs.radixdlt.com/docs/metadata-for-wallet-display
             let token_manager = ResourceBuilder::new_fungible(OwnerRole::None)
                 .metadata(metadata! {
@@ -86,11 +107,12 @@ mod token_manager {
                     init {
                         "name" => name.clone(), locked;
                         "symbol" => symbol, locked;
-                        "description" => description.clone(), updatable;
+                        "description" => description, updatable;
                         "tags" => tags, updatable;
-                        "icon_url" => icon_url.clone(), updatable;
-                        "info_url" => info_url.clone(), updatable;
+                        "icon_url" => icon_url, updatable;
+                        "info_url" => info_url, updatable;
                         "collateral" => collateral, locked;
+                        "presale_token" => presale_nft_manager.address(), locked;
                         "presale_start" => presale_start, locked;
                         "presale_end" => presale_end, locked;
                         "presale_goal" => presale_goal, locked;
@@ -109,27 +131,6 @@ mod token_manager {
                     burner_updater => rule!(deny_all);
                 ))
                 .create_with_no_initial_supply();
-
-            let presale_nft_manager =
-                ResourceBuilder::new_integer_non_fungible::<TokenMeta>(OwnerRole::None)
-                    .metadata(metadata! {
-                        init {
-                            "name" => format!("{} Presale", name), locked;
-                            "description" => description, updatable;
-                            "icon_url" => icon_url, updatable;
-                            "factory_component" => component_address, locked;
-                            "bonding_curve" => curve.to_string(), locked;
-                        }
-                    })
-                    .mint_roles(mint_roles! {
-                        minter => rule!(require(global_caller(component_address)));
-                        minter_updater => rule!(deny_all);
-                    })
-                    .burn_roles(burn_roles!(
-                        burner => rule!(require(global_caller(component_address)));
-                        burner_updater => rule!(deny_all);
-                    ))
-                    .create_with_no_initial_supply();
 
             let token = TokenSaleManager {
                 curve,

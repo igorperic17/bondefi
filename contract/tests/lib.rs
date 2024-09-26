@@ -87,8 +87,8 @@ fn test_token_manager() {
     let sale_component_receipt = receipt.expect_commit(true);
     let sale_component = sale_component_receipt.new_component_addresses()[0];
 
-    let launched_token_resource = sale_component_receipt.new_resource_addresses()[0];
-    let presale_nft_resource = sale_component_receipt.new_resource_addresses()[1];
+    let presale_nft_resource = sale_component_receipt.new_resource_addresses()[0];
+    let launched_token_resource = sale_component_receipt.new_resource_addresses()[1];
 
     let manifest = ManifestBuilder::new()
         .lock_fee_from_faucet()
