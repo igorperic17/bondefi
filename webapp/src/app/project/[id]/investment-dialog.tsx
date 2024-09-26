@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type ActionType = 'buy' | 'sell' | 'refund';
+export enum ActionType {
+    Buy = 'buy',
+    Sell = 'sell',
+    Refund = 'refund'
+}
 
 interface InvestmentDialogProps {
     isOpen: boolean;
@@ -33,39 +37,41 @@ export const InvestmentDialog: React.FC<InvestmentDialogProps> = ({
 }) => {
     const getDialogTitle = () => {
         switch (actionType) {
-            case 'buy': return `Invest in ${tokenName}`;
-            case 'sell': return `Sell ${tokenName}`;
-            case 'refund': return `Refund ${tokenName}`;
+            case ActionType.Buy: return `Invest in ${tokenName}`;
+            case ActionType.Sell: return `Sell ${tokenName}`;
+            case ActionType.Refund: return `Refund ${tokenName}`;
         }
     };
 
     const getDialogDescription = () => {
         switch (actionType) {
-            case 'buy': return "Enter the amount you want to invest. You will receive an NFT which you can use later to claim your tokens.";
-            case 'sell': return "Enter the amount of tokens you want to sell.";
-            case 'refund': return "Enter the amount of tokens you want to refund.";
+            case ActionType.Buy: return "Enter the amount you want to invest. You will receive an NFT which you can use later to claim your tokens.";
+            case ActionType.Sell: return "Enter the amount of tokens you want to sell.";
+            case ActionType.Refund: return "Enter the amount of tokens you want to refund.";
         }
     };
 
     const getInputLabel = () => {
         switch (actionType) {
-            case 'buy': return "Investment ($)";
-            case 'sell': case 'refund': return `Amount (${tokenSymbol})`;
+            case ActionType.Buy: return "Investment ($)";
+            case ActionType.Sell:
+            case ActionType.Refund: return `Amount (${tokenSymbol})`;
         }
     };
 
     const getResultLabel = () => {
         switch (actionType) {
-            case 'buy': return "Tokens to receive";
-            case 'sell': case 'refund': return "USD to receive";
+            case ActionType.Buy: return "Tokens to receive";
+            case ActionType.Sell:
+            case ActionType.Refund: return "USD to receive";
         }
     };
 
     const getConfirmButtonText = () => {
         switch (actionType) {
-            case 'buy': return "Confirm Investment";
-            case 'sell': return "Confirm Sale";
-            case 'refund': return "Confirm Refund";
+            case ActionType.Buy: return "Confirm Investment";
+            case ActionType.Sell: return "Confirm Sale";
+            case ActionType.Refund: return "Confirm Refund";
         }
     };
 
@@ -92,7 +98,7 @@ export const InvestmentDialog: React.FC<InvestmentDialogProps> = ({
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label className="text-right">{getResultLabel()}</Label>
                         <div className="col-span-3">
-                            {resultAmount.toFixed(2)} {actionType === 'buy' ? tokenSymbol : '$'}
+                            {resultAmount.toFixed(2)} {actionType === ActionType.Buy ? tokenSymbol : '$'}
                         </div>
                     </div>
                 </div>
