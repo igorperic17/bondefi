@@ -10,7 +10,7 @@ import "../bancor-formula/IBancorFormula.sol";
 import "../bancor-formula/BancorFormula.sol";
 import "../ERC20Token.sol";
 
-contract BatchedBancorMarketMaker is AccessControl, ReentrancyGuard {
+contract BatchedMarketMaker is AccessControl, ReentrancyGuard {
   using SafeERC20 for ERC20;
   using SafeERC20 for ERC20Token;
 
@@ -214,7 +214,7 @@ contract BatchedBancorMarketMaker is AccessControl, ReentrancyGuard {
       ERROR_INVALID_PERCENTAGE
     );
 
-    grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
     formula = _formula;
     token = ERC20Token(_token);
