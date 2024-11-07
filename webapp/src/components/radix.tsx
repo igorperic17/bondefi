@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import radixLogo from '../../public/radixdlt-logo.jpeg';
+import radixLogo from '../../public/particle.png';
 
 const RadixSection = () => {
     return (
@@ -21,7 +21,7 @@ const RadixSection = () => {
                                 }}>
                                 <Image
                                     src={radixLogo}
-                                    alt="RadixDLT Logo"
+                                    alt="Particle Network Logo"
                                     // layout="fill"
                                     objectFit="contain"
                                     className="rounded-lg"
@@ -31,17 +31,17 @@ const RadixSection = () => {
                     </div>
                     <div className="md:w-1/2">
                         <h2 className="text-4xl font-semibold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-600">
-                            Powered by Radix DLT
+                            Powered by Particle Network
                         </h2>
                         <p className="text-gray-300 mb-4">
-                            Our platform leverages the power of Radix DLT, a next-generation blockchain designed for decentralized finance and smart contracts. RadixDLT offers several key benefits:
+                            Our platform harnesses the capabilities of Particle Network, a cutting-edge solution for chain abstraction and interoperability. Particle Network provides several key advantages:
                         </p>
                         <ul className="list-disc list-inside text-gray-300 space-y-2">
-                            <li>Unparalleled scalability with atomic composability</li>
-                            <li>Developer-friendly smart contract language (Scrypto)</li>
-                            <li>High throughput and low latency</li>
-                            <li>Enhanced security through asset-oriented programming</li>
-                            <li>Built-in DeFi primitives for rapid development</li>
+                            <li>Seamless cross-chain interactions and asset transfers</li>
+                            <li>Unified interface for multiple blockchain ecosystems</li>
+                            <li>High efficiency and reduced transaction costs</li>
+                            <li>Robust security with advanced cryptographic protocols</li>
+                            <li>Accelerated development with pre-built modules and tools</li>
                         </ul>
                     </div>
                 </div>
