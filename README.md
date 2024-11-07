@@ -19,3 +19,7 @@ We solve two main problems here:
 2. Install the Scrypto CLI: https://github.com/radixdlt/scrypto
 3. Clone the repository: git clone https://github.com/bondefi-labs/bondefi
 4. Run the tests: scrypto test
+
+# EVM support
+
+Head over to [evm](./evm/)
