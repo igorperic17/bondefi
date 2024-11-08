@@ -13,14 +13,14 @@ const Hero: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-screen text-white">
             <div className="text-center">
                 <AnimatedGradientText className='mb-8'>
-                    <a href="https://eblockchainconvention.com/hackathon/" target="_blank" rel="noopener noreferrer" className="group flex items-center">
+                    <a href="https://www.encode.club/chain-abstraction-hackathon" target="_blank" rel="noopener noreferrer" className="group flex items-center">
                         🎉 <hr className="mx-2 h-4 w-[1px] shrink-0 bg-gray-300" />{" "}
                         <span
                             className={cn(
                                 `inline animate-gradient bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent`,
                             )}
                         >
-                            We're hacking at EBC 10 Radix hackathon!
+                            We're hacking at Encode Chain Abstraction Hackathon!
                         </span>
                         <ChevronRight className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
                     </a>
