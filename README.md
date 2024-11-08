@@ -23,3 +23,10 @@ We solve two main problems here:
 # EVM support
 
 Head over to [evm](./evm/)
+
+Supported chains:
+
+- Polygon Amoy
+- Ethereum Sepolia
+- Avalanche Fuji (C-Chain)
+- BSC Testnet
