@@ -105,6 +105,7 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
 
   //TODO limit slippage with % when using bonding curve
   //TODO: Native purchase, only ERC20 for now
+  //TODO: use permit2 (https://github.com/Uniswap/permit2) for allowance management, ideal use case for this launchpad
   function buyTokens(
     uint32 launchId,
     uint256 amount
