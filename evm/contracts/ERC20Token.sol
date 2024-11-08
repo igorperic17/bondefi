@@ -26,16 +26,10 @@ contract ERC20Token is AccessControl, ERC20Burnable, Pausable {
    *
    * See {ERC20-constructor}.
    */
-  constructor(
-    address treasury,
-    uint256 initialSupply,
-    string memory name,
-    string memory symbol
-  ) ERC20(name, symbol) {
+  constructor(string memory name, string memory symbol) ERC20(name, symbol) {
     _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     _grantRole(MINTER_ROLE, _msgSender());
     _grantRole(PAUSER_ROLE, _msgSender());
-    _mint(treasury, initialSupply);
   }
 
   /**

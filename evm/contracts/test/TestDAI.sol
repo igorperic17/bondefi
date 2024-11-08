@@ -23,13 +23,9 @@ contract TestDAI is AccessControl, ERC20 {
    *
    * See {ERC20-constructor}.
    */
-  constructor(
-    address treasury,
-    uint256 initialSupply
-  ) ERC20("Test Curve DAI", "TCDAI") {
+  constructor() ERC20("Test DAI", "TDAI") {
     _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     _grantRole(MINTER_ROLE, _msgSender());
-    _mint(treasury, initialSupply);
   }
 
   /**
@@ -42,7 +38,6 @@ contract TestDAI is AccessControl, ERC20 {
    * - the caller must have the `MINTER_ROLE`.
    */
   function mint(address to, uint256 amount) public virtual {
-    // require(hasRole(MINTER_ROLE, _msgSender()), "MetaSoccerToken: must have minter role to mint");
     // Free minting for simpler tests!
     _mint(to, amount);
   }

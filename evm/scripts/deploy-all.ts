@@ -1,51 +1,140 @@
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { AddressLike } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { deployCollection } from "./deploy-collection";
-import { deployCollectionRevealer } from "./deploy-collection-revealer";
-import { deployOwnershipManagement } from "./deploy-ownership-management";
-import { deployPermissions } from "./deploy-permissions";
-import { deployShop } from "./deploy-shop";
-import { givePermissions } from "./test-data/access";
-import { fundCollectionRevealer } from "./test-data/fund-collection-revealer";
-import { createProducts } from "./test-data/products";
+import {
+  BancorFormula__factory,
+  Launchpad__factory,
+  Purchase__factory,
+  PurchaseFactory__factory,
+  TestDAI__factory,
+} from "../typechain-types";
+import { verifyContract } from "./verify";
+
+const CONFIRMATIONS = 20;
+let verifications: (() => Promise<unknown>)[] = [];
+
+const asyncVerification = (
+  hre: HardhatRuntimeEnvironment,
+  contract: AddressLike,
+  ...args: any
+) => {
+  verifications.push(async () => {
+    try {
+      await verifyContract(hre, contract, ...args);
+    } catch (e) {
+      console.warn(`Contract ${await contract} could not be verified`);
+    }
+  });
+};
+
+const deployBancorFormula = async (
+  hre: HardhatRuntimeEnvironment,
+  deployer: SignerWithAddress,
+) => {
+  const contract = await new BancorFormula__factory(deployer).deploy();
+  console.log(
+    `Bancor Formula contract deployed at address: ${await contract.getAddress()}`,
+  );
+  await contract.deploymentTransaction()?.wait(CONFIRMATIONS);
+
+  asyncVerification(hre, contract);
+
+  return contract;
+};
+
+const deployDai = async (
+  hre: HardhatRuntimeEnvironment,
+  deployer: SignerWithAddress,
+) => {
+  const contract = await new TestDAI__factory(deployer).deploy();
+  console.log(
+    `DAI contract deployed at address: ${await contract.getAddress()}`,
+  );
+  await contract.deploymentTransaction()?.wait(CONFIRMATIONS);
+
+  asyncVerification(hre, contract);
+
+  return contract;
+};
+
+const deployPurchaseBaseNft = async (
+  hre: HardhatRuntimeEnvironment,
+  deployer: SignerWithAddress,
+) => {
+  const contract = await new Purchase__factory(deployer).deploy();
+  console.log(
+    `Purchase Base NFT contract deployed at address: ${await contract.getAddress()}`,
+  );
+  await contract.deploymentTransaction()?.wait(CONFIRMATIONS);
+
+  asyncVerification(hre, contract);
+
+  return contract;
+};
+
+const deployPurchaseFactory = async (
+  hre: HardhatRuntimeEnvironment,
+  deployer: SignerWithAddress,
+  purchaseBaseNft: AddressLike,
+) => {
+  const contract = await new PurchaseFactory__factory(deployer).deploy(
+    purchaseBaseNft,
+  );
+  console.log(
+    `Purchase NFT Factory contract deployed at address: ${await contract.getAddress()}`,
+  );
+  await contract.deploymentTransaction()?.wait(CONFIRMATIONS);
+
+  asyncVerification(hre, contract, purchaseBaseNft);
+
+  return contract;
+};
+
+const deployLaunchpad = async (
+  hre: HardhatRuntimeEnvironment,
+  deployer: SignerWithAddress,
+) => {
+  const contract = await new Launchpad__factory(deployer).deploy();
+  console.log(
+    `Launchpad contract deployed at address: ${await contract.getAddress()}`,
+  );
+  await contract.deploymentTransaction()?.wait(CONFIRMATIONS);
+
+  asyncVerification(hre, contract);
+
+  return contract;
+};
 
 export const deployAll = async (hre: HardhatRuntimeEnvironment) => {
-  const vrfCoordinator = "0x8C7382F9D8f56b33781fE506E897a4F1e2d17255"; //v1 VRF Polygon Mumbai
-  const linkToken = "0x326C977E6efc84E512bB9C30f76E30c160eD06FB";
-  const keyHash =
-    "0x6e75b569a01ef56d18cab6a8e71e6600d6ce853834d4a5748b720d06f878b3a4"; //v1 VRF Keyhash Polygon Mumbai
+  const [deployer] = await hre.ethers.getSigners();
 
-  const collectionRevealer = await deployCollectionRevealer(
+  const bancorFormula = await deployBancorFormula(hre, deployer);
+  const testDai = await deployDai(hre, deployer);
+  const purchaseBaseNft = await deployPurchaseBaseNft(hre, deployer);
+  const purchaseFactory = await deployPurchaseFactory(
     hre,
-    vrfCoordinator,
-    linkToken,
-    keyHash
+    deployer,
+    purchaseBaseNft,
   );
 
-  const permissions = await deployPermissions(hre);
+  const launchpad = await deployLaunchpad(hre, deployer);
 
-  const collection = await deployCollection(
-    hre,
-    "Test COCOS Collection",
-    "COCONFT",
-    collectionRevealer,
-    permissions
-  );
-
-  const ownershipManagement = await deployOwnershipManagement(hre);
-
-  const shop = await deployShop(hre, ownershipManagement);
-
-  await fundCollectionRevealer(hre, collectionRevealer, linkToken);
-
-  await givePermissions(hre, collection, shop, ownershipManagement);
-  await createProducts(hre, collection);
+  await launchpad.setPurchaseFactory(purchaseFactory);
 
   console.log("All contracts deployed and test data setup.");
   console.log({
-    collection,
-    shop,
-    ownershipManagement,
-    permissions,
-    collectionRevealer,
+    bancorFormula,
+    testDai,
+    purchaseBaseNft,
+    purchaseFactory,
+    launchpad,
   });
+
+  console.log("Performing contract verifications");
+
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+
+  for (const verification of verifications) {
+    await verification();
+  }
 };

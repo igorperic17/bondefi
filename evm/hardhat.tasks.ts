@@ -10,8 +10,20 @@ import { task } from "hardhat/config";
 
 task(
   "deploy-all",
-  "Deploys everything and initialises with test data"
+  "Deploys everything and initialises with test data",
 ).setAction(async (_, hre) => {
   const { deployAll } = require("./scripts/deploy-all");
   await deployAll(hre);
 });
+
+task("verify-contract", "Verifies a contract at an address")
+  .addPositionalParam("address")
+  .addOptionalVariadicPositionalParam("args")
+  .setAction(async ({ address, args }, hre) => {
+    const { verifyContract } = require("./scripts/verify");
+    if (args) {
+      await verifyContract(hre, address, ...args);
+    } else {
+      await verifyContract(hre, address);
+    }
+  });
