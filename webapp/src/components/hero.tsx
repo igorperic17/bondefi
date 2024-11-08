@@ -31,7 +31,7 @@ const Hero: React.FC = () => {
                 <div className="flex justify-center space-x-6">
                     <div className="mt-4">
                         <RainbowButton
-                            onClick={() => window.location.href = '/token/launch'}
+                            onClick={() => window.location.href = '/project/launch'}
                         // className="group"
                         >
                             <Rocket className="mr-2 h-4 w-4" />
@@ -40,7 +40,7 @@ const Hero: React.FC = () => {
                         </RainbowButton>
                     </div>
                     <button
-                        onClick={() => window.location.href = '/token'}
+                        onClick={() => window.location.href = '/project'}
                         className="pl-6 p-6 py-3 m-3 bg-transparent text-white font-bold rounded-lg shadow-lg border border-plate hover:bg-slate-700  transition duration-300 relative group"
                     >
                         Explore projects
