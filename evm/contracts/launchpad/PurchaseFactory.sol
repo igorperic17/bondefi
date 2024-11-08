@@ -14,13 +14,20 @@ contract PurchaseFactory {
   }
 
   function createPurchaseManager(
+    address collateralTokenAddress,
     string memory name,
     string memory symbol,
     string memory metadataURI,
     address creator
   ) public returns (address) {
     address purchaseNft = Clones.clone(baseContract);
-    Purchase(purchaseNft).initialize(name, symbol, metadataURI, creator);
+    Purchase(purchaseNft).initialize(
+      collateralTokenAddress,
+      name,
+      symbol,
+      metadataURI,
+      creator
+    );
     emit PurchaseManagerCreated(purchaseNft);
     return purchaseNft;
   }

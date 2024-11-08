@@ -16,6 +16,18 @@ task(
   await deployAll(hre);
 });
 
+task("deploy-bancor", "Deploys bancor formula").setAction(async (_, hre) => {
+  const { deploy } = require("./scripts/deploy-bancor");
+  await deploy(hre);
+});
+
+task("deploy-launchpad", "Deploys launchpad")
+  .addOptionalVariadicPositionalParam("args")
+  .setAction(async ({ purchaseFactory }, hre) => {
+    const { deploy } = require("./scripts/deploy-bancor");
+    await deploy(hre, purchaseFactory);
+  });
+
 task("verify-contract", "Verifies a contract at an address")
   .addPositionalParam("address")
   .addOptionalVariadicPositionalParam("args")
@@ -27,3 +39,11 @@ task("verify-contract", "Verifies a contract at an address")
       await verifyContract(hre, address);
     }
   });
+
+task(
+  "overwrite",
+  "Overwrite the latest transaction with an empty transaction",
+).setAction(async (_, hre) => {
+  const { overwrite } = require("./scripts/overwriteTransaction");
+  await overwrite(hre);
+});

@@ -38,6 +38,7 @@ export interface PurchaseInterface extends Interface {
       | "isApprovedForAll"
       | "lastPurchaseId"
       | "launchId"
+      | "launchpad"
       | "mint"
       | "name"
       | "owner"
@@ -50,6 +51,7 @@ export interface PurchaseInterface extends Interface {
       | "safeTransferFrom(address,address,uint256,bytes)"
       | "setApprovalForAll"
       | "setRefundState"
+      | "setTokenAddress"
       | "supportsInterface"
       | "symbol"
       | "tokenByIndex"
@@ -100,7 +102,7 @@ export interface PurchaseInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "initialize",
-    values: [string, string, string, AddressLike]
+    values: [AddressLike, string, string, string, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "isApprovedForAll",
@@ -111,6 +113,7 @@ export interface PurchaseInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(functionFragment: "launchId", values?: undefined): string;
+  encodeFunctionData(functionFragment: "launchpad", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "mint",
     values: [AddressLike, BigNumberish, BigNumberish]
@@ -152,6 +155,10 @@ export interface PurchaseInterface extends Interface {
   encodeFunctionData(
     functionFragment: "setRefundState",
     values: [boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setTokenAddress",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -220,6 +227,7 @@ export interface PurchaseInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "launchId", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "launchpad", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "mint", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
@@ -251,6 +259,10 @@ export interface PurchaseInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setRefundState",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setTokenAddress",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -421,6 +433,7 @@ export interface Purchase extends BaseContract {
 
   initialize: TypedContractMethod<
     [
+      _collateralToken: AddressLike,
       nftTokenName: string,
       nftTokenSymbol: string,
       metadataURI: string,
@@ -439,6 +452,8 @@ export interface Purchase extends BaseContract {
   lastPurchaseId: TypedContractMethod<[], [bigint], "view">;
 
   launchId: TypedContractMethod<[], [bigint], "view">;
+
+  launchpad: TypedContractMethod<[], [string], "view">;
 
   mint: TypedContractMethod<
     [
@@ -492,6 +507,12 @@ export interface Purchase extends BaseContract {
   >;
 
   setRefundState: TypedContractMethod<[enabled: boolean], [void], "nonpayable">;
+
+  setTokenAddress: TypedContractMethod<
+    [_claimableToken: AddressLike],
+    [void],
+    "nonpayable"
+  >;
 
   supportsInterface: TypedContractMethod<
     [interfaceId: BytesLike],
@@ -563,6 +584,7 @@ export interface Purchase extends BaseContract {
     nameOrSignature: "initialize"
   ): TypedContractMethod<
     [
+      _collateralToken: AddressLike,
       nftTokenName: string,
       nftTokenSymbol: string,
       metadataURI: string,
@@ -584,6 +606,9 @@ export interface Purchase extends BaseContract {
   getFunction(
     nameOrSignature: "launchId"
   ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "launchpad"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "mint"
   ): TypedContractMethod<
@@ -649,6 +674,9 @@ export interface Purchase extends BaseContract {
   getFunction(
     nameOrSignature: "setRefundState"
   ): TypedContractMethod<[enabled: boolean], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "setTokenAddress"
+  ): TypedContractMethod<[_claimableToken: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;

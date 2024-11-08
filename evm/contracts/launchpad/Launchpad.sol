@@ -26,6 +26,7 @@ struct Launch {
   uint32 totalUsers;
   address purchaseFormula;
   uint32 reserveRatio; //Percentage, value between 1 and 1000000
+  bool claimEnabled;
 }
 
 contract Launchpad is Ownable, Pausable, ReentrancyGuard {
@@ -39,13 +40,14 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   //This mapping MUST NOT be used to calculate the amount of tokens a user can claim, the NFT is the one that represents that
   mapping(uint32 => mapping(address => uint256)) investments; //investments[launchId][user] => amountInvested
 
-  event UserInvestment(
-    uint256 launchId,
+  event TokensPurchased(
+    uint256 indexed launchId,
     address indexed user,
     uint256 amount,
     uint256 tokenAmount
   );
-  event LaunchCreated(uint256 launchId);
+  event LaunchCreated(uint256 indexed launchId);
+  event TGE(uint256 indexed launchId, address indexed tokenAddress); //Token Generation Event
 
   constructor() Ownable(msg.sender) {}
 
@@ -61,7 +63,8 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     uint128 capPerUser,
     uint32 saleStart,
     uint32 saleEnd,
-    address purchaseFormula
+    address purchaseFormula,
+    uint32 reserveRatio
   ) external /* onlyOwner */ {
     require(
       address(purchaseFactory) != address(0),
@@ -79,8 +82,10 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     launch.saleStart = saleStart;
     launch.saleEnd = saleEnd;
     launch.purchaseFormula = purchaseFormula;
+    launch.reserveRatio = reserveRatio;
 
     launch.purchaseNftAddress = purchaseFactory.createPurchaseManager(
+      purchaseToken,
       purchaseNftName,
       purchaseNftSymbol,
       "", //TODO: metadataURI
@@ -88,30 +93,6 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     );
 
     emit LaunchCreated(launch.id);
-  }
-
-  function updateLaunch(
-    uint32 launchId,
-    address purchaseToken,
-    uint256 targetRaise,
-    uint128 capPerUser,
-    uint32 saleStart,
-    uint32 saleEnd,
-    address purchaseFormula
-  ) external onlyOwner {
-    Launch storage launch = launches[launchId];
-
-    require(
-      block.timestamp < (launch.saleStart - 60),
-      "Sale starts in less than a minute"
-    );
-
-    launch.purchaseToken = purchaseToken;
-    launch.targetRaise = targetRaise;
-    launch.capPerUser = capPerUser;
-    launch.saleStart = saleStart;
-    launch.saleEnd = saleEnd;
-    launch.purchaseFormula = purchaseFormula;
   }
 
   function pause() public onlyOwner {
@@ -123,12 +104,12 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   }
 
   //TODO limit slippage with % when using bonding curve
-  //uint256 maxSlippage
   //TODO: Native purchase, only ERC20 for now
   function buyTokens(
     uint32 launchId,
     uint256 amount
   ) external whenNotPaused nonReentrant {
+    require(amount > 0, "Amount must be greater than 0");
     Launch storage launch = launches[launchId];
     require(block.timestamp >= launch.saleStart, "Sale not started");
     require(block.timestamp <= launch.saleEnd, "Sale ended");
@@ -151,14 +132,9 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
       );
     }
 
-    if (launchInvestments[msg.sender] == 0) {
-      launch.totalUsers += 1;
-    }
-    launch.raised += amount;
-    launchInvestments[msg.sender] += amount;
-
     uint256 tokenAmount = IBancorFormula(launch.purchaseFormula)
       .calculatePurchaseReturn(
+        //TODO: Allow starting prices above 10**18, currently this would fail due to the virtual supply of 1 token
         10 ** 14, //startingPrice 0.0001
         launch.tokensToBeEmitted,
         launch.raised,
@@ -166,6 +142,13 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
         amount
       );
 
+    require(tokenAmount > 0, "Purchased token amount would be 0");
+
+    if (launchInvestments[msg.sender] == 0) {
+      launch.totalUsers += 1;
+    }
+    launch.raised += amount;
+    launchInvestments[msg.sender] += amount;
     launch.tokensToBeEmitted += tokenAmount;
 
     //Tokenize purchase
@@ -176,7 +159,66 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     );
     Purchase(launch.purchaseNftAddress).mint(msg.sender, amount, tokenAmount);
 
-    emit UserInvestment(launchId, msg.sender, amount, tokenAmount);
+    emit TokensPurchased(launchId, msg.sender, amount, tokenAmount);
+  }
+
+  function isRefundEnabled(uint32 launchId) public view returns (bool) {
+    Launch storage launch = launches[launchId];
+    return
+      !isClaimEnabled(launchId) &&
+      (block.timestamp > launch.saleEnd && launch.raised < launch.targetRaise);
+  }
+
+  modifier whenRefundEnabled(uint32 launchId) {
+    require(isRefundEnabled(launchId), "Refund not available");
+    _;
+  }
+
+  function isClaimEnabled(uint32 launchId) public view returns (bool) {
+    Launch storage launch = launches[launchId];
+    return launch.claimEnabled;
+  }
+
+  function tgeEvent(uint32 launchId, address tokenAddress) external onlyOwner {
+    Launch storage launch = launches[launchId];
+    require(launch.id > 0, "Project launch does not exist");
+    require(block.timestamp > launch.saleEnd, "Sale not ended");
+    require(launch.tokensToBeEmitted > 0, "No tokens to be emitted");
+    require(
+      IERC20(tokenAddress).balanceOf(address(this)) == launch.tokensToBeEmitted,
+      "Not enough funds to fund all claims"
+    );
+
+    IERC20(tokenAddress).safeTransfer(
+      launch.purchaseNftAddress,
+      launch.tokensToBeEmitted
+    );
+
+    Purchase(launch.purchaseNftAddress).setTokenAddress(tokenAddress);
+
+    deployLiquidity(launchId);
+    setupStaking(launchId);
+
+    launch.claimEnabled = true;
+
+    emit TGE(launchId, tokenAddress);
+  }
+
+  function deployLiquidity(uint32 launchId) private {
+    //TODO: Deploy liquidity with UniswapV3
+  }
+
+  function setupStaking(uint32 launchId) private {
+    //TODO: Set up a staking contract with rewards against the LP token
+  }
+
+  function claimFees(uint32 launchId) external {
+    //TODO: Collect v3 fees and distribute them to the staking contract
+  }
+
+  modifier whenClaimEnabled(uint32 launchId) {
+    require(isClaimEnabled(launchId), "Claim not enabled");
+    _;
   }
 
   function checkAllowance(
@@ -191,7 +233,9 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     require(amount <= amountAllowed, "Not enough spend allowance for ERC20");
   }
 
-  function claim(uint32 launchId) external whenNotPaused {
+  function claim(
+    uint32 launchId
+  ) external whenNotPaused nonReentrant whenClaimEnabled(launchId) {
     Purchase purchase = getPurchaseFromLaunch(launchId);
 
     while (purchase.balanceOf(msg.sender) > 0) {
@@ -199,7 +243,9 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     }
   }
 
-  function refund(uint32 launchId) external whenNotPaused {
+  function refund(
+    uint32 launchId
+  ) external whenNotPaused nonReentrant whenRefundEnabled(launchId) {
     Purchase purchase = getPurchaseFromLaunch(launchId);
 
     while (purchase.balanceOf(msg.sender) > 0) {
@@ -236,5 +282,16 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     }
   }
 
-  //TODO: emergency withdrawal of native funds and ERC20s
+  function withdrawETH() external onlyOwner {
+    payable(owner()).transfer(address(this).balance);
+  }
+
+  function withdrawERC20(address tokenAddress) external onlyOwner {
+    IERC20 token = IERC20(tokenAddress);
+    uint256 balance = token.balanceOf(address(this));
+    require(balance > 0, "No tokens to withdraw");
+    token.safeTransfer(owner(), balance);
+  }
+
+  receive() external payable {}
 }

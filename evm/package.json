@@ -7,8 +7,11 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "report": "REPORT_GAS=1 hardhat test",
-    "deploy-all:testnet": "hardhat deploy-all --network bscTestnet",
-    "verify:testnet": "hardhat verify-contract --network bscTestnet"
+    "deploy-all:testnet": "hardhat deploy-all --network polygonAmoy",
+    "deploy-bancor:testnet": "hardhat deploy-bancor --network polygonAmoy",
+    "deploy-launchpad:testnet": "hardhat deploy-launchpad --network polygonAmoy",
+    "verify:testnet": "hardhat verify-contract --network polygonAmoy",
+    "overwrite-nonce": "hardhat overwrite --network polygonAmoy"
   },
   "repository": {
     "type": "git",

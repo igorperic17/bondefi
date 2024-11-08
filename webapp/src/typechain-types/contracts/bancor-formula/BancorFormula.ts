@@ -26,6 +26,7 @@ export interface BancorFormulaInterface extends Interface {
       | "calculateCrossReserveReturn"
       | "calculatePurchaseReturn"
       | "calculateSaleReturn"
+      | "maxRatio"
       | "version"
   ): FunctionFragment;
 
@@ -53,6 +54,7 @@ export interface BancorFormulaInterface extends Interface {
     functionFragment: "calculateSaleReturn",
     values: [BigNumberish, BigNumberish, BigNumberish, BigNumberish]
   ): string;
+  encodeFunctionData(functionFragment: "maxRatio", values?: undefined): string;
   encodeFunctionData(functionFragment: "version", values?: undefined): string;
 
   decodeFunctionResult(
@@ -67,6 +69,7 @@ export interface BancorFormulaInterface extends Interface {
     functionFragment: "calculateSaleReturn",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "maxRatio", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "version", data: BytesLike): Result;
 }
 
@@ -148,6 +151,8 @@ export interface BancorFormula extends BaseContract {
     "view"
   >;
 
+  maxRatio: TypedContractMethod<[], [bigint], "view">;
+
   version: TypedContractMethod<[], [bigint], "view">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
@@ -192,6 +197,9 @@ export interface BancorFormula extends BaseContract {
     [bigint],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "maxRatio"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "version"
   ): TypedContractMethod<[], [bigint], "view">;

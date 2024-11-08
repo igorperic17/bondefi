@@ -26,6 +26,7 @@ export interface IBancorFormulaInterface extends Interface {
       | "calculateCrossReserveReturn"
       | "calculatePurchaseReturn"
       | "calculateSaleReturn"
+      | "maxRatio"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -52,6 +53,7 @@ export interface IBancorFormulaInterface extends Interface {
     functionFragment: "calculateSaleReturn",
     values: [BigNumberish, BigNumberish, BigNumberish, BigNumberish]
   ): string;
+  encodeFunctionData(functionFragment: "maxRatio", values?: undefined): string;
 
   decodeFunctionResult(
     functionFragment: "calculateCrossReserveReturn",
@@ -65,6 +67,7 @@ export interface IBancorFormulaInterface extends Interface {
     functionFragment: "calculateSaleReturn",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "maxRatio", data: BytesLike): Result;
 }
 
 export interface IBancorFormula extends BaseContract {
@@ -145,6 +148,8 @@ export interface IBancorFormula extends BaseContract {
     "view"
   >;
 
+  maxRatio: TypedContractMethod<[], [bigint], "view">;
+
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -187,6 +192,9 @@ export interface IBancorFormula extends BaseContract {
     [bigint],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "maxRatio"
+  ): TypedContractMethod<[], [bigint], "view">;
 
   filters: {};
 }

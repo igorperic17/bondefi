@@ -1,5 +1,5 @@
-import "hardhat-gas-reporter";
 import "@nomicfoundation/hardhat-toolbox";
+import "hardhat-gas-reporter";
 import { HardhatUserConfig } from "hardhat/types";
 import "./hardhat.tasks";
 import * as secrets from "./secrets.json";
@@ -39,7 +39,13 @@ const config: HardhatUserConfig = {
     },
     bscTestnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
+      gasPrice: 5,
       chainId: 97,
+      accounts: [secrets.accounts.deployer],
+    },
+    polygonAmoy: {
+      url: "https://rpc-amoy.polygon.technology/",
+      chainId: 80002,
       accounts: [secrets.accounts.deployer],
     },
   },
@@ -52,6 +58,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       bscTestnet: secrets?.verification?.bscScan,
+      polygonAmoy: secrets?.verification?.polygonScan,
     },
     // customChains: [
     //   {

@@ -19,6 +19,7 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
   string private _symbol;
   string private _metadataURI;
 
+  address public launchpad;
   uint32 public launchId;
   IERC20 public collateralToken;
   IERC20 public claimableToken;
@@ -37,15 +38,22 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
   }
 
   function initialize(
+    address _collateralToken,
     string memory nftTokenName,
     string memory nftTokenSymbol,
     string memory metadataURI,
     address owner
   ) public {
+    launchpad = msg.sender;
+    collateralToken = IERC20(_collateralToken);
     _name = nftTokenName;
     _symbol = nftTokenSymbol;
     _metadataURI = metadataURI;
     _transferOwnership(owner);
+  }
+
+  function setTokenAddress(address _claimableToken) external onlyOwner {
+    claimableToken = IERC20(_claimableToken);
   }
 
   function mint(
@@ -92,9 +100,15 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
     return _symbol;
   }
 
-  function refund(
-    uint256 tokenId
-  ) external nonReentrant whenRefundEnabled onlyOwner {
+  function refund(uint256 tokenId) external nonReentrant onlyOwner {
+    require(
+      address(collateralToken) != address(0),
+      "Collateral address not set"
+    );
+    collateralToken.approve(
+      address(this),
+      purchaseBalances[tokenId].collateralAmount
+    );
     collateralToken.safeTransferFrom(
       address(this),
       _ownerOf(tokenId),
@@ -105,9 +119,15 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
     super._burn(tokenId);
   }
 
-  function claim(
-    uint256 tokenId
-  ) external nonReentrant whenClaimEnabled onlyOwner {
+  function claim(uint256 tokenId) external nonReentrant onlyOwner {
+    require(
+      address(claimableToken) != address(0),
+      "Claimable token address not set"
+    );
+    claimableToken.approve(
+      address(this),
+      purchaseBalances[tokenId].collateralAmount
+    );
     claimableToken.safeTransferFrom(
       address(this),
       _ownerOf(tokenId),

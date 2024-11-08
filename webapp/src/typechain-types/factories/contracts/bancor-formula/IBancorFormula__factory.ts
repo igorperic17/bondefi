@@ -121,6 +121,19 @@ const _abi = [
     stateMutability: "view",
     type: "function",
   },
+  {
+    inputs: [],
+    name: "maxRatio",
+    outputs: [
+      {
+        internalType: "uint32",
+        name: "",
+        type: "uint32",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
 ] as const;
 
 export class IBancorFormula__factory {

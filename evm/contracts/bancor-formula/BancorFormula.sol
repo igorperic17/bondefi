@@ -711,4 +711,8 @@ contract BancorFormula is IBancorFormula, Utils {
 
     return res;
   }
+
+  function maxRatio() external pure override returns (uint32) {
+    return MAX_RATIO;
+  }
 }

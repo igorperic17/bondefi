@@ -35,7 +35,7 @@ export interface PurchaseFactoryInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "createPurchaseManager",
-    values: [string, string, string, AddressLike]
+    values: [AddressLike, string, string, string, AddressLike]
   ): string;
 
   decodeFunctionResult(
@@ -106,7 +106,13 @@ export interface PurchaseFactory extends BaseContract {
   baseContract: TypedContractMethod<[], [string], "view">;
 
   createPurchaseManager: TypedContractMethod<
-    [name: string, symbol: string, metadataURI: string, creator: AddressLike],
+    [
+      collateralTokenAddress: AddressLike,
+      name: string,
+      symbol: string,
+      metadataURI: string,
+      creator: AddressLike
+    ],
     [string],
     "nonpayable"
   >;
@@ -121,7 +127,13 @@ export interface PurchaseFactory extends BaseContract {
   getFunction(
     nameOrSignature: "createPurchaseManager"
   ): TypedContractMethod<
-    [name: string, symbol: string, metadataURI: string, creator: AddressLike],
+    [
+      collateralTokenAddress: AddressLike,
+      name: string,
+      symbol: string,
+      metadataURI: string,
+      creator: AddressLike
+    ],
     [string],
     "nonpayable"
   >;

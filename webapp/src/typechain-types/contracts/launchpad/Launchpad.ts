@@ -28,8 +28,11 @@ export interface LaunchpadInterface extends Interface {
     nameOrSignature:
       | "buyTokens"
       | "claim"
+      | "claimFees"
       | "createLaunch"
       | "getUserStats"
+      | "isClaimEnabled"
+      | "isRefundEnabled"
       | "launches"
       | "owner"
       | "pause"
@@ -37,10 +40,12 @@ export interface LaunchpadInterface extends Interface {
       | "refund"
       | "renounceOwnership"
       | "setPurchaseFactory"
+      | "tgeEvent"
       | "totalLaunches"
       | "transferOwnership"
       | "unpause"
-      | "updateLaunch"
+      | "withdrawERC20"
+      | "withdrawETH"
   ): FunctionFragment;
 
   getEvent(
@@ -48,8 +53,9 @@ export interface LaunchpadInterface extends Interface {
       | "LaunchCreated"
       | "OwnershipTransferred"
       | "Paused"
+      | "TGE"
+      | "TokensPurchased"
       | "Unpaused"
-      | "UserInvestment"
   ): EventFragment;
 
   encodeFunctionData(
@@ -57,6 +63,10 @@ export interface LaunchpadInterface extends Interface {
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "claim", values: [BigNumberish]): string;
+  encodeFunctionData(
+    functionFragment: "claimFees",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "createLaunch",
     values: [
@@ -67,12 +77,21 @@ export interface LaunchpadInterface extends Interface {
       BigNumberish,
       BigNumberish,
       BigNumberish,
-      AddressLike
+      AddressLike,
+      BigNumberish
     ]
   ): string;
   encodeFunctionData(
     functionFragment: "getUserStats",
     values: [AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isClaimEnabled",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isRefundEnabled",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "launches",
@@ -94,6 +113,10 @@ export interface LaunchpadInterface extends Interface {
     values: [AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "tgeEvent",
+    values: [BigNumberish, AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "totalLaunches",
     values?: undefined
   ): string;
@@ -103,26 +126,31 @@ export interface LaunchpadInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "updateLaunch",
-    values: [
-      BigNumberish,
-      AddressLike,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      AddressLike
-    ]
+    functionFragment: "withdrawERC20",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "withdrawETH",
+    values?: undefined
   ): string;
 
   decodeFunctionResult(functionFragment: "buyTokens", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "claimFees", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "createLaunch",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "getUserStats",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "isClaimEnabled",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "isRefundEnabled",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "launches", data: BytesLike): Result;
@@ -138,6 +166,7 @@ export interface LaunchpadInterface extends Interface {
     functionFragment: "setPurchaseFactory",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "tgeEvent", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "totalLaunches",
     data: BytesLike
@@ -148,7 +177,11 @@ export interface LaunchpadInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "updateLaunch",
+    functionFragment: "withdrawERC20",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "withdrawETH",
     data: BytesLike
   ): Result;
 }
@@ -190,11 +223,12 @@ export namespace PausedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace UnpausedEvent {
-  export type InputTuple = [account: AddressLike];
-  export type OutputTuple = [account: string];
+export namespace TGEEvent {
+  export type InputTuple = [launchId: BigNumberish, tokenAddress: AddressLike];
+  export type OutputTuple = [launchId: bigint, tokenAddress: string];
   export interface OutputObject {
-    account: string;
+    launchId: bigint;
+    tokenAddress: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -202,7 +236,7 @@ export namespace UnpausedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace UserInvestmentEvent {
+export namespace TokensPurchasedEvent {
   export type InputTuple = [
     launchId: BigNumberish,
     user: AddressLike,
@@ -220,6 +254,18 @@ export namespace UserInvestmentEvent {
     user: string;
     amount: bigint;
     tokenAmount: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace UnpausedEvent {
+  export type InputTuple = [account: AddressLike];
+  export type OutputTuple = [account: string];
+  export interface OutputObject {
+    account: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -278,6 +324,12 @@ export interface Launchpad extends BaseContract {
 
   claim: TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
 
+  claimFees: TypedContractMethod<
+    [launchId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   createLaunch: TypedContractMethod<
     [
       purchaseNftName: string,
@@ -287,7 +339,8 @@ export interface Launchpad extends BaseContract {
       capPerUser: BigNumberish,
       saleStart: BigNumberish,
       saleEnd: BigNumberish,
-      purchaseFormula: AddressLike
+      purchaseFormula: AddressLike,
+      reserveRatio: BigNumberish
     ],
     [void],
     "nonpayable"
@@ -302,6 +355,18 @@ export interface Launchpad extends BaseContract {
         tokenAmount: bigint;
       }
     ],
+    "view"
+  >;
+
+  isClaimEnabled: TypedContractMethod<
+    [launchId: BigNumberish],
+    [boolean],
+    "view"
+  >;
+
+  isRefundEnabled: TypedContractMethod<
+    [launchId: BigNumberish],
+    [boolean],
     "view"
   >;
 
@@ -320,7 +385,8 @@ export interface Launchpad extends BaseContract {
         bigint,
         bigint,
         string,
-        bigint
+        bigint,
+        boolean
       ] & {
         id: bigint;
         purchaseToken: string;
@@ -334,6 +400,7 @@ export interface Launchpad extends BaseContract {
         totalUsers: bigint;
         purchaseFormula: string;
         reserveRatio: bigint;
+        claimEnabled: boolean;
       }
     ],
     "view"
@@ -355,6 +422,12 @@ export interface Launchpad extends BaseContract {
     "nonpayable"
   >;
 
+  tgeEvent: TypedContractMethod<
+    [launchId: BigNumberish, tokenAddress: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   totalLaunches: TypedContractMethod<[], [bigint], "view">;
 
   transferOwnership: TypedContractMethod<
@@ -365,19 +438,13 @@ export interface Launchpad extends BaseContract {
 
   unpause: TypedContractMethod<[], [void], "nonpayable">;
 
-  updateLaunch: TypedContractMethod<
-    [
-      launchId: BigNumberish,
-      purchaseToken: AddressLike,
-      targetRaise: BigNumberish,
-      capPerUser: BigNumberish,
-      saleStart: BigNumberish,
-      saleEnd: BigNumberish,
-      purchaseFormula: AddressLike
-    ],
+  withdrawERC20: TypedContractMethod<
+    [tokenAddress: AddressLike],
     [void],
     "nonpayable"
   >;
+
+  withdrawETH: TypedContractMethod<[], [void], "nonpayable">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
@@ -394,6 +461,9 @@ export interface Launchpad extends BaseContract {
     nameOrSignature: "claim"
   ): TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "claimFees"
+  ): TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "createLaunch"
   ): TypedContractMethod<
     [
@@ -404,7 +474,8 @@ export interface Launchpad extends BaseContract {
       capPerUser: BigNumberish,
       saleStart: BigNumberish,
       saleEnd: BigNumberish,
-      purchaseFormula: AddressLike
+      purchaseFormula: AddressLike,
+      reserveRatio: BigNumberish
     ],
     [void],
     "nonpayable"
@@ -423,6 +494,12 @@ export interface Launchpad extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "isClaimEnabled"
+  ): TypedContractMethod<[launchId: BigNumberish], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "isRefundEnabled"
+  ): TypedContractMethod<[launchId: BigNumberish], [boolean], "view">;
+  getFunction(
     nameOrSignature: "launches"
   ): TypedContractMethod<
     [arg0: BigNumberish],
@@ -439,7 +516,8 @@ export interface Launchpad extends BaseContract {
         bigint,
         bigint,
         string,
-        bigint
+        bigint,
+        boolean
       ] & {
         id: bigint;
         purchaseToken: string;
@@ -453,6 +531,7 @@ export interface Launchpad extends BaseContract {
         totalUsers: bigint;
         purchaseFormula: string;
         reserveRatio: bigint;
+        claimEnabled: boolean;
       }
     ],
     "view"
@@ -476,6 +555,13 @@ export interface Launchpad extends BaseContract {
     nameOrSignature: "setPurchaseFactory"
   ): TypedContractMethod<[factoryAddress: AddressLike], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "tgeEvent"
+  ): TypedContractMethod<
+    [launchId: BigNumberish, tokenAddress: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "totalLaunches"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
@@ -485,20 +571,11 @@ export interface Launchpad extends BaseContract {
     nameOrSignature: "unpause"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "updateLaunch"
-  ): TypedContractMethod<
-    [
-      launchId: BigNumberish,
-      purchaseToken: AddressLike,
-      targetRaise: BigNumberish,
-      capPerUser: BigNumberish,
-      saleStart: BigNumberish,
-      saleEnd: BigNumberish,
-      purchaseFormula: AddressLike
-    ],
-    [void],
-    "nonpayable"
-  >;
+    nameOrSignature: "withdrawERC20"
+  ): TypedContractMethod<[tokenAddress: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "withdrawETH"
+  ): TypedContractMethod<[], [void], "nonpayable">;
 
   getEvent(
     key: "LaunchCreated"
@@ -522,18 +599,25 @@ export interface Launchpad extends BaseContract {
     PausedEvent.OutputObject
   >;
   getEvent(
+    key: "TGE"
+  ): TypedContractEvent<
+    TGEEvent.InputTuple,
+    TGEEvent.OutputTuple,
+    TGEEvent.OutputObject
+  >;
+  getEvent(
+    key: "TokensPurchased"
+  ): TypedContractEvent<
+    TokensPurchasedEvent.InputTuple,
+    TokensPurchasedEvent.OutputTuple,
+    TokensPurchasedEvent.OutputObject
+  >;
+  getEvent(
     key: "Unpaused"
   ): TypedContractEvent<
     UnpausedEvent.InputTuple,
     UnpausedEvent.OutputTuple,
     UnpausedEvent.OutputObject
-  >;
-  getEvent(
-    key: "UserInvestment"
-  ): TypedContractEvent<
-    UserInvestmentEvent.InputTuple,
-    UserInvestmentEvent.OutputTuple,
-    UserInvestmentEvent.OutputObject
   >;
 
   filters: {
@@ -570,6 +654,28 @@ export interface Launchpad extends BaseContract {
       PausedEvent.OutputObject
     >;
 
+    "TGE(uint256,address)": TypedContractEvent<
+      TGEEvent.InputTuple,
+      TGEEvent.OutputTuple,
+      TGEEvent.OutputObject
+    >;
+    TGE: TypedContractEvent<
+      TGEEvent.InputTuple,
+      TGEEvent.OutputTuple,
+      TGEEvent.OutputObject
+    >;
+
+    "TokensPurchased(uint256,address,uint256,uint256)": TypedContractEvent<
+      TokensPurchasedEvent.InputTuple,
+      TokensPurchasedEvent.OutputTuple,
+      TokensPurchasedEvent.OutputObject
+    >;
+    TokensPurchased: TypedContractEvent<
+      TokensPurchasedEvent.InputTuple,
+      TokensPurchasedEvent.OutputTuple,
+      TokensPurchasedEvent.OutputObject
+    >;
+
     "Unpaused(address)": TypedContractEvent<
       UnpausedEvent.InputTuple,
       UnpausedEvent.OutputTuple,
@@ -579,17 +685,6 @@ export interface Launchpad extends BaseContract {
       UnpausedEvent.InputTuple,
       UnpausedEvent.OutputTuple,
       UnpausedEvent.OutputObject
-    >;
-
-    "UserInvestment(uint256,address,uint256,uint256)": TypedContractEvent<
-      UserInvestmentEvent.InputTuple,
-      UserInvestmentEvent.OutputTuple,
-      UserInvestmentEvent.OutputObject
-    >;
-    UserInvestment: TypedContractEvent<
-      UserInvestmentEvent.InputTuple,
-      UserInvestmentEvent.OutputTuple,
-      UserInvestmentEvent.OutputObject
     >;
   };
 }

@@ -26,4 +26,6 @@ interface IBancorFormula {
     uint32 toConnectorWeight,
     uint256 amount
   ) external view returns (uint256);
+
+  function maxRatio() external view returns (uint32);
 }
