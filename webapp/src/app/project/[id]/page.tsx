@@ -5,7 +5,6 @@ import { Progress } from '@/components/ui/progress'
 import { useToast } from '@/hooks/use-toast'
 import { BONDING_CURVES } from '@/lib/bonding-curve'
 import { radix } from '@/lib/radix'
-import type { TokenDetails } from '@/lib/radix/dto/tokenDetails'
 import { presaleNFTMintManifest } from '@/lib/radix/manifest/buy'
 import { claimManifest } from '@/lib/radix/manifest/claim'
 import { get } from 'lodash'
@@ -24,8 +23,11 @@ import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { featuredProjects } from '../featured-projects-mock'
+// import { featuredProjects } from '../featured-projects-mock'
 import { ActionType, InvestmentDialog } from './investment-dialog'
+import useEvmLaunchpad from '@/lib/evm/use-evm-launchpad'
+import { useWallets } from '@particle-network/connectkit'
+import { extractEVMTokenDetails, TokenDetails } from '@/lib/evm/dto/launch-details'
 
 type ExtractedNFT = {
     resourceAddress: string;
@@ -48,50 +50,26 @@ export default function TokenPage() {
     const [claimingNFT, setClaimingNFT] = useState<string | null>(null)
     const { toast } = useToast()
 
+    const [primaryWallet] = useWallets(); 
+    const { launchpad } = useEvmLaunchpad(primaryWallet?.connector);
+
     const fetchTokenDetails = useCallback(async () => {
+        console.log('fetching token details', id)
         if (id) {
             try {
-                const result = await radix.getTokenDetails(id as string)
+                const result = await launchpad?.launches(Number(id))
                 if (result) {
                     console.log('SETTING TOKEN', result)
-                    setToken(result)
-                    return result // Return the result for further use
+                    const tokenDetails = extractEVMTokenDetails(result)
+                    setToken(tokenDetails)
+                    return tokenDetails // Return the result for further use
                 }
             } catch (error) {
                 console.error('Error fetching token details:', error)
-            }
-
-            // If not found in radix or if there was an error, check featured projects
-            const featuredProject = featuredProjects.find(
-                (project) => project.id === id,
-            )
-            if (featuredProject) {
-                const launchDate = new Date(featuredProject.dateCreated)
-                const tokenDetails = {
-                    id: featuredProject.id,
-                    name: featuredProject.name,
-                    symbol: featuredProject.symbol,
-                    description: featuredProject.description,
-                    iconUrl: featuredProject.iconUrl,
-                    dateCreated: launchDate,
-                    bondingCurve: featuredProject.bondingCurve,
-                    fundraisingTarget: featuredProject.fundraisingTarget,
-                    factoryComponentId: featuredProject.factoryComponentId,
-                    presaleStart: new Date(featuredProject.presaleStart),
-                    presaleEnd: new Date(featuredProject.presaleEnd),
-                    infoUrl: featuredProject.infoUrl,
-                    collateralAddress: featuredProject.collateralAddress,
-                    presaleGoal: featuredProject.presaleGoal,
-                    presaleSuccess: featuredProject.presaleSuccess,
-                    presaleTokenId: featuredProject.presaleTokenId,
-                }
-                setToken(tokenDetails)
-                return tokenDetails
-            } else {
-                console.error('Token not found')
                 return null
             }
         }
+        return null
     }, [id])
 
     const fetchCurrentFunding = useCallback(
@@ -181,7 +159,7 @@ export default function TokenPage() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const tokenDetails = await fetchTokenDetails()
+            const tokenDetails: TokenDetails | null = await fetchTokenDetails()
             if (tokenDetails) {
                 await Promise.all([
                     fetchCurrentFunding(tokenDetails),

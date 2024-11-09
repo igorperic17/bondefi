@@ -29,29 +29,26 @@ export interface TokenDetails {
   presaleSuccess: boolean;
 }
 
-export const extractTokenDetails = (state: StateEntityMetadataPageResponse) =>
-  ({
-    id: state.address,
-    name: extractProperty(state, "name", "Unnamed Token"),
-    symbol: extractProperty(state, "symbol", ""),
-    description: extractProperty(state, "description", ""),
-    iconUrl: extractProperty(state, "icon_url", ""),
-    infoUrl: extractProperty(state, "info_url", ""),
-
-    bondingCurve: extractProperty(state, "bonding_curve", "").split(":"),
-    factoryComponentId: extractProperty(state, "factory_component", ""),
-
-    dateCreated: new Date(state.ledger_state.proposer_round_timestamp),
-    fundraisingTarget: Number(
-      extractProperty(state, "fundraising_target", "0"),
-    ),
-    collateralAddress: extractProperty(state, "collateral", ""),
-    presaleTokenId: extractProperty(state, "presale_token", ""),
-    presaleStart: new Date(extractProperty(state, "presale_start", "")),
-    presaleEnd: new Date(extractProperty(state, "presale_end", "")),
-    presaleGoal: extractProperty(state, "presale_goal", "0"),
-    presaleSuccess: extractProperty(state, "presale_success", false),
-  }) satisfies TokenDetails;
+export const extractEVMTokenDetails = (launchProxy: any) => {
+  return {
+    id: launchProxy.id.toString(),
+    name: "N/A", // Assuming name is not available in the current token structure
+    symbol: "N/A", // Assuming symbol is not available in the current token structure
+    description: "N/A", // Assuming description is not available in the current token structure
+    iconUrl: "", // Assuming iconUrl is not available in the current token structure
+    infoUrl: `/project/${launchProxy.id.toString()}`,
+    bondingCurve: [], // Assuming bondingCurve is not available in the current token structure
+    factoryComponentId: "N/A", // Assuming factoryComponentId is not available in the current token structure
+    dateCreated: new Date(Number(launchProxy.saleStart) * 1000),
+    fundraisingTarget: Number(launchProxy.targetRaise),
+    collateralAddress: launchProxy.purchaseToken, // Using purchaseToken as collateralAddress
+    presaleTokenId: launchProxy.purchaseNftAddress, // Using purchaseNftAddress as presaleTokenId
+    presaleStart: new Date(Number(launchProxy.saleStart) * 1000),
+    presaleEnd: new Date(Number(launchProxy.saleEnd) * 1000),
+    presaleGoal: launchProxy.targetRaise.toString(), // Using targetRaise as presaleGoal
+    presaleSuccess: Number(launchProxy.raised) >= Number(launchProxy.targetRaise),
+  } as TokenDetails;
+}
 
 const computeFundingState = (
   token: TokenDetails,

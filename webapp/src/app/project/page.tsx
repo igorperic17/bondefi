@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
 import useEvmLaunchpad from "@/lib/evm/use-evm-launchpad"
 import { useWallets } from "@particle-network/connectkit"
-import { TokenDetails } from "@/lib/radix/dto/tokenDetails"
+import { extractEVMTokenDetails, TokenDetails } from "@/lib/evm/dto/launch-details"
 
 const TokenList: React.FC = () => {
   const [primaryWallet] = useWallets()
@@ -31,24 +31,7 @@ const TokenList: React.FC = () => {
       const launches: TokenDetails[] = [];
       for (let i = 0; i < totalLaunches; i++) {
         const launchProxy = await launchpad.launches(i);
-        const launch: TokenDetails = {
-          id: launchProxy.id.toString(),
-          name: "N/A", // Assuming name is not available in the current token structure
-          symbol: "N/A", // Assuming symbol is not available in the current token structure
-          description: "N/A", // Assuming description is not available in the current token structure
-          iconUrl: "", // Assuming iconUrl is not available in the current token structure
-          infoUrl: `/project/${launchProxy.id.toString()}`,
-          bondingCurve: [], // Assuming bondingCurve is not available in the current token structure
-          factoryComponentId: "N/A", // Assuming factoryComponentId is not available in the current token structure
-          dateCreated: new Date(Number(launchProxy.saleStart) * 1000),
-          fundraisingTarget: Number(launchProxy.targetRaise),
-          collateralAddress: launchProxy.purchaseToken, // Using purchaseToken as collateralAddress
-          presaleTokenId: launchProxy.purchaseNftAddress, // Using purchaseNftAddress as presaleTokenId
-          presaleStart: new Date(Number(launchProxy.saleStart) * 1000),
-          presaleEnd: new Date(Number(launchProxy.saleEnd) * 1000),
-          presaleGoal: launchProxy.targetRaise.toString(), // Using targetRaise as presaleGoal
-          presaleSuccess: Number(launchProxy.raised) >= Number(launchProxy.targetRaise),
-        };
+        const launch: TokenDetails = extractEVMTokenDetails(launchProxy);
         launches.push(launch);
       }
       console.log(launches);
