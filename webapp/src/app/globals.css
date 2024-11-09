@@ -73,3 +73,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+.particle-network-only > div > div > div:first-child {
+  --pcm-body-background: transparent;
+}
+
+.particle-network-only > div > div > div > div:not(:first-child) {
+  display: none;
+}
+
+.particle-network-only > div > div {
+  display: block;
+}
+
+.particle-network-only > div > div > div {
+  max-width: none;
+  width: 100%;
+}
+
+.particle-network-only > div > div > div:first-child > div:first-child {
+  width: calc(100% - 18px);
+}
+
+.particle-network-only > div > div > div > div:first-child > div > div {
+  width: 100% !important;
+}

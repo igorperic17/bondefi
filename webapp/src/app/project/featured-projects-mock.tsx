@@ -1,7 +1,7 @@
 import { TokenDetails } from "@/lib/radix/dto/tokenDetails";
-import { BOUNDING_CURVES } from "@/lib/bounding-curve";
+import { BONDING_CURVES as BONDING_CURVES } from "@/lib/bonding-curve";
 
-const bancorCurve = BOUNDING_CURVES.find(curve => curve.name === 'Bancor');
+const bancorCurve = BONDING_CURVES.find(curve => curve.name === 'Bancor');
 
 export const featuredProjects: TokenDetails[] = [
     {

@@ -22,24 +22,9 @@ import type {
 
 export interface BancorFormulaInterface extends Interface {
   getFunction(
-    nameOrSignature:
-      | "calculateCrossReserveReturn"
-      | "calculatePurchaseReturn"
-      | "calculateSaleReturn"
-      | "maxRatio"
-      | "version"
+    nameOrSignature: "calculatePurchaseReturn" | "maxRatio" | "version"
   ): FunctionFragment;
 
-  encodeFunctionData(
-    functionFragment: "calculateCrossReserveReturn",
-    values: [
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish
-    ]
-  ): string;
   encodeFunctionData(
     functionFragment: "calculatePurchaseReturn",
     values: [
@@ -49,24 +34,12 @@ export interface BancorFormulaInterface extends Interface {
       BigNumberish,
       BigNumberish
     ]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "calculateSaleReturn",
-    values: [BigNumberish, BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "maxRatio", values?: undefined): string;
   encodeFunctionData(functionFragment: "version", values?: undefined): string;
 
   decodeFunctionResult(
-    functionFragment: "calculateCrossReserveReturn",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "calculatePurchaseReturn",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "calculateSaleReturn",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "maxRatio", data: BytesLike): Result;
@@ -116,18 +89,6 @@ export interface BancorFormula extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  calculateCrossReserveReturn: TypedContractMethod<
-    [
-      _fromReserveBalance: BigNumberish,
-      _fromReserveRatio: BigNumberish,
-      _toReserveBalance: BigNumberish,
-      _toReserveRatio: BigNumberish,
-      _amount: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-
   calculatePurchaseReturn: TypedContractMethod<
     [
       _startingPrice: BigNumberish,
@@ -135,17 +96,6 @@ export interface BancorFormula extends BaseContract {
       _reserveBalance: BigNumberish,
       _reserveRatio: BigNumberish,
       _depositAmount: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-
-  calculateSaleReturn: TypedContractMethod<
-    [
-      _supply: BigNumberish,
-      _reserveBalance: BigNumberish,
-      _reserveRatio: BigNumberish,
-      _sellAmount: BigNumberish
     ],
     [bigint],
     "view"
@@ -160,19 +110,6 @@ export interface BancorFormula extends BaseContract {
   ): T;
 
   getFunction(
-    nameOrSignature: "calculateCrossReserveReturn"
-  ): TypedContractMethod<
-    [
-      _fromReserveBalance: BigNumberish,
-      _fromReserveRatio: BigNumberish,
-      _toReserveBalance: BigNumberish,
-      _toReserveRatio: BigNumberish,
-      _amount: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-  getFunction(
     nameOrSignature: "calculatePurchaseReturn"
   ): TypedContractMethod<
     [
@@ -181,18 +118,6 @@ export interface BancorFormula extends BaseContract {
       _reserveBalance: BigNumberish,
       _reserveRatio: BigNumberish,
       _depositAmount: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "calculateSaleReturn"
-  ): TypedContractMethod<
-    [
-      _supply: BigNumberish,
-      _reserveBalance: BigNumberish,
-      _reserveRatio: BigNumberish,
-      _sellAmount: BigNumberish
     ],
     [bigint],
     "view"

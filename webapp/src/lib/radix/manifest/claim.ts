@@ -1,9 +1,9 @@
-import { string } from '../utils'
+import { string } from "@/lib/utils";
 
 export interface BuyParams {
-	accountId: string
-	nftTokenAddress: string
-	tokenId: string
+  accountId: string;
+  nftTokenAddress: string;
+  tokenId: string;
 }
 
 export const claimManifest = (componentId: string, props: BuyParams) => `
@@ -30,4 +30,4 @@ export const claimManifest = (componentId: string, props: BuyParams) => `
         "deposit_batch"
         Expression("ENTIRE_WORKTOP")
     ;
-`
+`;

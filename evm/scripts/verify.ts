@@ -33,10 +33,10 @@ export const asyncVerification = (
 ) => {
   verifications.push(async () => {
     try {
-      await verifyContract(hre, contract, ...args);
+      await verifyContract(hre, await contract.getAddress(), ...args);
     } catch (e) {
       console.warn(
-        `Contract ${await addressLikeToStr(contract)} could not be verified`,
+        `Contract ${await contract.getAddress()} could not be verified`,
       );
     }
   });

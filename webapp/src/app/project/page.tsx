@@ -1,16 +1,15 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useInView } from 'react-intersection-observer'
-import TokenCard from '@/components/token-card'
-import { RainbowButton } from "@/components/magicui/rainbow-button"
-import { ChevronRight, Rocket } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { Progress } from "@/components/ui/progress"
 import HyperText from "@/components/magicui/hyper-text"
+import { RainbowButton } from "@/components/magicui/rainbow-button"
+import TokenCard from '@/components/token-card'
+import { NetworkSelector } from '@/components/ui/network-selector'
 import { radix } from '@/lib/radix'
 import { TokenDetails } from '@/lib/radix/dto/tokenDetails'
-import { featuredProjects } from './featured-projects-mock'
+import { ChevronRight, Rocket } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import React, { useEffect, useState } from 'react'
+import { useInView } from 'react-intersection-observer'
 
 const TokenList: React.FC = () => {
   const [tokens, setTokens] = useState<TokenDetails[]>([])
@@ -46,11 +45,12 @@ const TokenList: React.FC = () => {
 
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold">All Projects</h1>
-        <RainbowButton
-          onClick={() => router.push('/project/launch')}
-        >
+        <div style={{minWidth: "25%"}}>
+          <NetworkSelector />
+        </div>
+        <RainbowButton onClick={() => router.push("/project/launch")}>
           <Rocket className="mr-2 h-4 w-4" />
           Launch your project
           <ChevronRight className="ml-2 h-4 w-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1.5" />
@@ -73,13 +73,16 @@ const TokenList: React.FC = () => {
       {isLoading && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="text-center">
-            <HyperText className="text-xl font-bold" text='Loading projects...'></HyperText>
+            <HyperText
+              className="text-xl font-bold"
+              text="Loading projects..."
+            ></HyperText>
           </div>
         </div>
       )}
       {hasMore && <div ref={ref} className="h-10 mt-4" />}
     </div>
-  )
+  );
 }
 
 export default TokenList

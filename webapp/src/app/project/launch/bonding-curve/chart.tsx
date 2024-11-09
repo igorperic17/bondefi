@@ -8,7 +8,7 @@ import {
 	createChart,
 } from 'lightweight-charts'
 
-import { BoundingCurve } from '@/lib/bounding-curve'
+import { BondingCurve } from '@/lib/bonding-curve'
 
 const formatCash = (n: number) => {
 	if (n < 1e3) return n.toFixed(0)
@@ -45,7 +45,7 @@ const chartStyle: (unit: string) => DeepPartial<ChartOptions> = (unit) => ({
 })
 
 interface ChartProps {
-	curve: BoundingCurve
+	curve: BondingCurve
 	params: number[]
 	target: number
 	symbol?: string

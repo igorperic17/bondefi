@@ -13,45 +13,6 @@ const _abi = [
     inputs: [
       {
         internalType: "uint256",
-        name: "fromConnectorBalance",
-        type: "uint256",
-      },
-      {
-        internalType: "uint32",
-        name: "fromConnectorWeight",
-        type: "uint32",
-      },
-      {
-        internalType: "uint256",
-        name: "toConnectorBalance",
-        type: "uint256",
-      },
-      {
-        internalType: "uint32",
-        name: "toConnectorWeight",
-        type: "uint32",
-      },
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "calculateCrossReserveReturn",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
         name: "startingPrice",
         type: "uint256",
       },
@@ -77,40 +38,6 @@ const _abi = [
       },
     ],
     name: "calculatePurchaseReturn",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "supply",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "connectorBalance",
-        type: "uint256",
-      },
-      {
-        internalType: "uint32",
-        name: "connectorWeight",
-        type: "uint32",
-      },
-      {
-        internalType: "uint256",
-        name: "sellAmount",
-        type: "uint256",
-      },
-    ],
-    name: "calculateSaleReturn",
     outputs: [
       {
         internalType: "uint256",

@@ -33,13 +33,12 @@ const config: HardhatUserConfig = {
     },
     fuji: {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
-      gasPrice: 225000000000,
       chainId: 43113,
       accounts: [secrets.accounts.deployer],
     },
     bscTestnet: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
-      gasPrice: 5,
+      gasPrice: 3,
       chainId: 97,
       accounts: [secrets.accounts.deployer],
     },
@@ -60,24 +59,6 @@ const config: HardhatUserConfig = {
       bscTestnet: secrets?.verification?.bscScan,
       polygonAmoy: secrets?.verification?.polygonScan,
     },
-    // customChains: [
-    //   {
-    //     network: "sepolia",
-    //     chainId: 421614,
-    //     urls: {
-    //       apiURL: "https://api-sepolia.arbiscan.io/api",
-    //       browserURL: "https://goerli.etherscan.io",
-    //     },
-    //   },
-    //   {
-    //     network: "arbitrum",
-    //     chainId: 42161,
-    //     urls: {
-    //       apiURL: "https://api.arbiscan.io/api",
-    //       browserURL: "https://goerli.etherscan.io",
-    //     },
-    //   },
-    // ],
   },
 };
 

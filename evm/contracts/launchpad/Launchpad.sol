@@ -74,6 +74,8 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     require(saleEnd > saleStart, "Sale dates are incorrect");
     require(targetRaise > 0, "Zero target raise");
 
+    //TODO: Create ERC20 token already (this is temporary, in future projects will be the ones creating the tokens)
+
     Launch storage launch = launches[++totalLaunches];
     launch.id = totalLaunches;
     launch.purchaseToken = purchaseToken;

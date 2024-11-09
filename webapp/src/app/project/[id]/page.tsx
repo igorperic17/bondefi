@@ -1,19 +1,14 @@
 'use client'
 
-import { Chart } from '@/app/project/launch/bounding-curve/chart'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { BOUNDING_CURVES } from '@/lib/bounding-curve'
+import { useToast } from '@/hooks/use-toast'
+import { BONDING_CURVES } from '@/lib/bonding-curve'
 import { radix } from '@/lib/radix'
 import type { TokenDetails } from '@/lib/radix/dto/tokenDetails'
 import { presaleNFTMintManifest } from '@/lib/radix/manifest/buy'
 import { claimManifest } from '@/lib/radix/manifest/claim'
-import type {
-    NonFungibleResourcesCollectionItemVaultAggregated,
-    StateEntityDetailsVaultResponseItem,
-} from '@radixdlt/babylon-gateway-api-sdk'
-import { get, result } from 'lodash'
+import { get } from 'lodash'
 import {
     ArrowLeft,
     CalendarIcon,
@@ -21,9 +16,9 @@ import {
     DollarSignIcon,
     ImageIcon,
     InfoIcon,
+    Loader,
     StarIcon,
     TrendingUpIcon,
-    Loader,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
@@ -31,7 +26,6 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { featuredProjects } from '../featured-projects-mock'
 import { ActionType, InvestmentDialog } from './investment-dialog'
-import { useToast } from '@/hooks/use-toast'
 
 type ExtractedNFT = {
     resourceAddress: string;
@@ -208,13 +202,7 @@ export default function TokenPage() {
     const isNotFunded = token && !token.presaleSuccess && new Date() > new Date(token.presaleEnd)
 
     const curve = useMemo(() => {
-        // if (token && token.bondingCurve.length > 0) {
-        //     const curveType = token.bondingCurve[0].toLowerCase();
-        //     console.log(curveType);
-        //     console.log(BOUNDING_CURVES);
-        //     return BOUNDING_CURVES.find(c => c.name.toLowerCase() === curveType) || BOUNDING_CURVES[0];
-        // }
-        return BOUNDING_CURVES[2]
+        return BONDING_CURVES[2]
     }, [token])
 
     const params = useMemo(() => {
@@ -226,7 +214,7 @@ export default function TokenPage() {
 
     const calculateTokenAmount = (investment: number) => {
         console.log(investment);
-        const tokenAmount = BOUNDING_CURVES[0].compute(investment,
+        const tokenAmount = BONDING_CURVES[0].compute(investment,
             currentFunding,
             [parseFloat(token!.bondingCurve[1])]
         )

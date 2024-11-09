@@ -22,23 +22,9 @@ import type {
 
 export interface IBancorFormulaInterface extends Interface {
   getFunction(
-    nameOrSignature:
-      | "calculateCrossReserveReturn"
-      | "calculatePurchaseReturn"
-      | "calculateSaleReturn"
-      | "maxRatio"
+    nameOrSignature: "calculatePurchaseReturn" | "maxRatio"
   ): FunctionFragment;
 
-  encodeFunctionData(
-    functionFragment: "calculateCrossReserveReturn",
-    values: [
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish,
-      BigNumberish
-    ]
-  ): string;
   encodeFunctionData(
     functionFragment: "calculatePurchaseReturn",
     values: [
@@ -48,23 +34,11 @@ export interface IBancorFormulaInterface extends Interface {
       BigNumberish,
       BigNumberish
     ]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "calculateSaleReturn",
-    values: [BigNumberish, BigNumberish, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "maxRatio", values?: undefined): string;
 
   decodeFunctionResult(
-    functionFragment: "calculateCrossReserveReturn",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "calculatePurchaseReturn",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "calculateSaleReturn",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "maxRatio", data: BytesLike): Result;
@@ -113,18 +87,6 @@ export interface IBancorFormula extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
-  calculateCrossReserveReturn: TypedContractMethod<
-    [
-      fromConnectorBalance: BigNumberish,
-      fromConnectorWeight: BigNumberish,
-      toConnectorBalance: BigNumberish,
-      toConnectorWeight: BigNumberish,
-      amount: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-
   calculatePurchaseReturn: TypedContractMethod<
     [
       startingPrice: BigNumberish,
@@ -137,36 +99,12 @@ export interface IBancorFormula extends BaseContract {
     "view"
   >;
 
-  calculateSaleReturn: TypedContractMethod<
-    [
-      supply: BigNumberish,
-      connectorBalance: BigNumberish,
-      connectorWeight: BigNumberish,
-      sellAmount: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-
   maxRatio: TypedContractMethod<[], [bigint], "view">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
 
-  getFunction(
-    nameOrSignature: "calculateCrossReserveReturn"
-  ): TypedContractMethod<
-    [
-      fromConnectorBalance: BigNumberish,
-      fromConnectorWeight: BigNumberish,
-      toConnectorBalance: BigNumberish,
-      toConnectorWeight: BigNumberish,
-      amount: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
   getFunction(
     nameOrSignature: "calculatePurchaseReturn"
   ): TypedContractMethod<
@@ -176,18 +114,6 @@ export interface IBancorFormula extends BaseContract {
       connectorBalance: BigNumberish,
       connectorWeight: BigNumberish,
       depositAmount: BigNumberish
-    ],
-    [bigint],
-    "view"
-  >;
-  getFunction(
-    nameOrSignature: "calculateSaleReturn"
-  ): TypedContractMethod<
-    [
-      supply: BigNumberish,
-      connectorBalance: BigNumberish,
-      connectorWeight: BigNumberish,
-      sellAmount: BigNumberish
     ],
     [bigint],
     "view"

@@ -1,14 +1,14 @@
-import { string } from '../utils'
+import { string } from "@/lib/utils";
 
 export interface BuyParams {
-	accountId: string
-	collateralAddress: string
-	amount: string
+  accountId: string;
+  collateralAddress: string;
+  amount: string;
 }
 
 export const presaleNFTMintManifest = (
-	componentId: string,
-	props: BuyParams,
+  componentId: string,
+  props: BuyParams,
 ) => `
     CALL_METHOD
         Address(${string(props.accountId)})
@@ -33,4 +33,4 @@ export const presaleNFTMintManifest = (
         "deposit_batch"
         Expression("ENTIRE_WORKTOP")
     ;
-`
+`;

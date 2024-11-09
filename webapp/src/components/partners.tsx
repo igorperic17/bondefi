@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import radixLogo from '../../public/particle.png';
 
-const RadixSection = () => {
+const PartnerSection = () => {
     return (
         <section className="py-10">
             <div className="container mx-auto px-4">
@@ -50,4 +50,4 @@ const RadixSection = () => {
     );
 };
 
-export default RadixSection;
+export default PartnerSection;
