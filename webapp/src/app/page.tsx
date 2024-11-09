@@ -3,7 +3,7 @@
 import Features from "@/components/bento";
 import BondingSection from "@/components/bonding";
 import FooterSection from "@/components/footer";
-import RadixSection from "@/components/radix";
+import PartnerSection from "@/components/partners";
 import RoadmapSection from "@/components/roadmap";
 import TeamSection from "@/components/team";
 import { TextRevealSection } from "@/components/text-reveal";
@@ -13,11 +13,10 @@ export default function Home() {
   return (
     <>
       <Hero />
-      {/* <TokenSlider tokens={mockTokens} /> */}
       <TextRevealSection text="Imagine launching an instantly tradable token with built-in guaranteed liquidity... forever." />
       <BondingSection />
       <Features />
-      <RadixSection />
+      <PartnerSection />
       <RoadmapSection />
       <TeamSection />
       <FooterSection />

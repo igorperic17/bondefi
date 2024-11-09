@@ -1,34 +1,34 @@
-import { dateToUnixTimestamp, string } from '../utils'
+import { dateToUnixTimestamp, string } from "@/lib/utils";
 
 export interface CreateTokenProps {
-	collateralAddress: string
-	name: string
-	symbol: string
-	description: string
-	iconUrl: string
-	projectUrl: string
-	tagList: []
+  collateralAddress: string;
+  name: string;
+  symbol: string;
+  description: string;
+  iconUrl: string;
+  projectUrl: string;
+  tagList: [];
 
-	saleStart: Date
-	saleEnd: Date
-	presaleGoal: string
+  saleStart: Date;
+  saleEnd: Date;
+  presaleGoal: string;
 
-	bondingCurveType: number
-	bondingCurveParameters: number[]
+  bondingCurveType: number;
+  bondingCurveParameters: number[];
 }
 
 export const createTokenManifest = (
-	accountId: string,
-	componentId: string,
-	props: CreateTokenProps,
+  accountId: string,
+  componentId: string,
+  props: CreateTokenProps,
 ) => {
-	const curveParams = props.bondingCurveParameters
-		.map((t) => `Decimal(${string(t.toString())})`)
-		.join(', ')
+  const curveParams = props.bondingCurveParameters
+    .map((t) => `Decimal(${string(t.toString())})`)
+    .join(", ");
 
-	const tags = props.tagList.map(string).join(', ')
+  const tags = props.tagList.map(string).join(", ");
 
-	return `
+  return `
         CALL_METHOD
             Address("${componentId}")
             "create_token"
@@ -52,5 +52,5 @@ export const createTokenManifest = (
             "deposit_batch"
             Expression("ENTIRE_WORKTOP")
         ;
-    `
-}
+    `;
+};

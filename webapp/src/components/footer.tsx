@@ -16,8 +16,8 @@ const FooterSection: React.FC = () => {
                     <div>
                         <h4 className="text-xl font-semibold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">Quick Links</h4>
                         <ul className="space-y-2">
-                            <li><Link href="/token/launch" className="text-gray-300 hover:text-white transition duration-300">Launch Token</Link></li>
-                            <li><Link href="/token" className="text-gray-300 hover:text-white transition duration-300">Explore Projects</Link></li>
+                            <li><Link href="/project/launch" className="text-gray-300 hover:text-white transition duration-300">Launch Token</Link></li>
+                            <li><Link href="/project" className="text-gray-300 hover:text-white transition duration-300">Explore Projects</Link></li>
                             <li><Link href="#" className="text-gray-300 hover:text-white transition duration-300">About Us</Link></li>
                             <li><Link href="#" className="text-gray-300 hover:text-white transition duration-300">FAQ</Link></li>
                         </ul>

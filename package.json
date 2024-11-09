@@ -1,0 +1,18 @@
+{
+  "name": "bondefi-monorepo",
+  "private": true,
+  "workspaces": [
+    "contract",
+    "evm",
+    "webapp"
+  ],
+  "devDependencies": {
+    "eslint": "latest",
+    "eslint-config-next": "latest"
+  },
+  "engines": {
+    "node": ">=22",
+    "npm": ">=10"
+  },
+  "packageManager": "yarn@3.4.1"
+}

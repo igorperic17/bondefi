@@ -3,40 +3,43 @@ import { CheckCircle, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const roadmapData = [
-    {
-        phase: 'Phase 1: MVP Development',
-        deadline: 'Q4 2024',
-        progress: 80,
-        features: [
-            { name: 'Smart contract development', completed: true },
-            { name: 'Website launch', completed: true },
-            { name: 'DEX integration (Ociswap)', completed: true },
-            { name: 'Cross-chain integration', completed: false },
-            { name: 'Radix DLT developer grant application', completed: false },
-        ],
-    },
-    {
-        phase: 'Phase 2: Launch',
-        deadline: 'Q1 2025',
-        progress: 0,
-        features: [
-            { name: 'Winning the Radix DLT development grant', completed: false },
-            { name: 'Governance implementation (DAO for founders)', completed: false },
-            { name: 'Smart contract audit', completed: false },
-            { name: 'BDF Token launch', completed: false },
-            { name: 'Partnerships', completed: false },
-        ],
-    },
-    {
-        phase: 'Phase 3: Expansion',
-        deadline: 'Q2 2025',
-        progress: 0,
-        features: [
-            { name: 'Community building', completed: false },
-            { name: 'Global marketing campaign', completed: false },
-            { name: 'Support for other distributed ecosystems (EVM, Near, Cosmos)', completed: false },
-        ],
-    },
+  {
+    phase: "Phase 1: MVP Development",
+    deadline: "Q4 2024",
+    progress: 100,
+    features: [
+      { name: "Smart contract development", completed: true },
+      { name: "Website launch", completed: true },
+      { name: "DEX integration (UniswapV3)", completed: true },
+      { name: "Cross-chain integration", completed: true },
+    ],
+  },
+  {
+    phase: "Phase 2: Launch",
+    deadline: "Q1 2025",
+    progress: 0,
+    features: [
+      { name: "Network grant application", completed: false },
+      { name: "Smart contract audit", completed: false },
+      { name: "Community building", completed: false },
+      { name: "First project launch: open entry", completed: false },
+      { name: "Partnerships", completed: false },
+      { name: "BDF Token launch", completed: false },
+    ],
+  },
+  {
+    phase: "Phase 3: Expansion",
+    deadline: "Q2 2025",
+    progress: 0,
+    features: [
+      { name: "First project launch: token-gated access", completed: false },
+      { name: "Global marketing campaign", completed: false },
+      {
+        name: "Support for Solana and Sui networks",
+        completed: false,
+      },
+    ],
+  },
 ];
 
 const RoadmapSection = () => {
