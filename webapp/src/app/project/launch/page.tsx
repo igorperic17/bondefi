@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BONDING_CURVES } from "@/lib/bonding-curve";
 import type { CreateTokenProps } from "@/lib/evm/dto/create-token";
 import { findLogs } from "@/lib/evm/evm-utils";
-import { BANCOR_RESERVE_RATIO_PRECISION } from "@/lib/evm/token-addresses";
+import { BANCOR_RESERVE_RATIO_PRECISION, RESERVE_TOKENS } from "@/lib/evm/token-addresses";
 import useERC20 from "@/lib/evm/use-erc20";
 import useEvmLaunchpad from "@/lib/evm/use-evm-launchpad";
 import { dateToUnixTimestamp } from "@/lib/utils";
@@ -16,7 +16,7 @@ import {
 import { add } from "date-fns";
 import { ethers } from "ethers";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { BondingCurve } from "./bonding-curve";
 import { TokenForm } from "./form";
 
@@ -31,8 +31,8 @@ export default function LaunchToken() {
     name: "",
     symbol: "",
     targetRaise: "10000",
-    purchaseToken: "",
-    purchaseFormula: BONDING_CURVES[0].address,
+    purchaseToken: RESERVE_TOKENS[0]?.address,
+    purchaseFormula: BONDING_CURVES[0]?.address,
     reserveRatio: 0.5,
     saleStart: new Date(),
     saleEnd: add(new Date(), { days: 3 }),
