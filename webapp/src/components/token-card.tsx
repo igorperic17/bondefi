@@ -2,24 +2,54 @@ import React from 'react';
 import Image from 'next/image';
 import { MagicCard } from '@/components/magicui/magic-card';
 import { BorderBeam } from "@/components/magicui/border-beam";
-import { TrendingUpIcon, DollarSignIcon, CalendarIcon, StarIcon, ImageIcon } from 'lucide-react';
+import { TrendingUpIcon, DollarSignIcon, CalendarIcon, StarIcon, ImageIcon, InfoIcon } from 'lucide-react';
 
 interface TokenCardProps {
-    image: string | undefined;
+    id: string;
     name: string;
-    totalSupply: string;
-    launchDate: string;
-    projectUrl: string;
+    symbol: string;
+    description: string;
+    iconUrl: string;
+    infoUrl: string;
+    bondingCurve: string[];
+    factoryComponentId: string;
+    dateCreated: Date;
+    fundraisingTarget: number;
+    collateralAddress: string;
+    presaleTokenId: string;
+    presaleStart: Date | null;
+    presaleEnd: Date | null;
+    presaleGoal: string;
+    presaleSuccess: boolean;
     isTrending: boolean;
     isFundingReached: boolean;
 }
 
-const TokenCard: React.FC<TokenCardProps> = ({ image, name, totalSupply, launchDate, projectUrl, isTrending, isFundingReached }) => {
-    const isNewToken = new Date(launchDate) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Token is new if launched within the last 30 days
+const TokenCard: React.FC<TokenCardProps> = ({
+    id,
+    name,
+    symbol,
+    description,
+    iconUrl,
+    infoUrl,
+    bondingCurve,
+    factoryComponentId,
+    dateCreated,
+    fundraisingTarget,
+    collateralAddress,
+    presaleTokenId,
+    presaleStart,
+    presaleEnd,
+    presaleGoal,
+    presaleSuccess,
+    isTrending,
+    isFundingReached
+}) => {
+    const isNewToken = presaleStart ? new Date(presaleStart) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : false;
 
     const handleClick = () => {
-        console.log(projectUrl);
-        window.location.href = projectUrl;
+        console.log(infoUrl);
+        window.location.href = infoUrl;
     };
 
     return (
@@ -28,9 +58,9 @@ const TokenCard: React.FC<TokenCardProps> = ({ image, name, totalSupply, launchD
             onClick={handleClick}
         >
             <div className="relative h-48 w-full rounded-t-xl overflow-hidden" onClick={handleClick}>
-                {image ? (
+                {iconUrl ? (
                     <Image
-                        src={image}
+                        src={iconUrl}
                         alt={`${name} token`}
                         layout="fill"
                         objectFit="cover"
@@ -72,14 +102,22 @@ const TokenCard: React.FC<TokenCardProps> = ({ image, name, totalSupply, launchD
 
             <div className="p-4 flex flex-col items-center w-full" onClick={handleClick}>
                 {(isTrending) && <BorderBeam size={250} duration={12} delay={9} />}
-                <h2 className="text-2xl font-bold mb-2 text-white">{name}</h2>
+                <h2 className="text-2xl font-bold mb-2 text-white">{name} ({symbol})</h2>
+                <p className="text-sm text-gray-400 mb-1 flex items-center">
+                    <InfoIcon className="w-4 h-4 mr-2" />
+                    {description ? description : 'No description available'}
+                </p>
                 <p className="text-sm text-gray-400 mb-1 flex items-center">
                     <DollarSignIcon className="w-4 h-4 mr-2" />
-                    Total Supply: {totalSupply}
+                    Fundraising Target: {(Number(fundraisingTarget) / 1e+22 * 10000).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                 </p>
                 <p className="text-sm text-gray-400 mb-4 flex items-center">
                     <CalendarIcon className="w-4 h-4 mr-2" />
-                    Launched: {launchDate}
+                    Presale Start: {presaleStart ? presaleStart.toLocaleDateString() : 'N/A'}
+                </p>
+                <p className="text-sm text-gray-400 mb-4 flex items-center">
+                    <CalendarIcon className="w-4 h-4 mr-2" />
+                    Presale End: {presaleEnd ? presaleEnd.toLocaleDateString() : 'N/A'}
                 </p>
             </div>
         </MagicCard>

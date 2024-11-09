@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BondingCurve } from "./bonding-curve";
 import { TokenForm } from "./form";
+import { motion } from "framer-motion";
 
 export default function LaunchToken() {
   const [primaryWallet] = useWallets();
@@ -101,7 +102,31 @@ export default function LaunchToken() {
   };
 
   return (
-    <div className="p-4 w-full">
+    <div className="p-4 w-full relative">
+      {loading && (
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-10"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="text-white text-xl mb-4">Launching your project...</div>
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 border-4 border-gray-200 rounded-full relative">
+              <motion.div
+                className="w-4 h-4 bg-gray-200 rounded-full absolute"
+                animate={{ rotate: 360 }}
+                transition={{
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  duration: 1,
+                }}
+                style={{ top: '50%', left: '50%', translateX: '-100%', translateY: '-100%', originX: 1, originY: 1 }}
+              />
+            </div>
+          </div>
+        </motion.div>
+      )}
       <h1 className="text-3xl font-bold mb-6 text-white">Launch New Project</h1>
 
       {(isConnected && (
@@ -109,7 +134,7 @@ export default function LaunchToken() {
           <div className="flex-[0.6]">
             <TokenForm params={params} onSet={setParams} />
 
-            <Button onClick={launchToken}>Launch Token</Button>
+            <Button onClick={launchToken} disabled={loading}>Launch Token</Button>
           </div>
 
           <div className="flex-1">
