@@ -22,6 +22,9 @@ import { advanceToFuture, findLogs } from "../fixtures/blockchain-utils";
 import { createLaunchDetails } from "../fixtures/launch-details";
 
 describe("Launchpad", () => {
+  const timeToStartSale = 60;
+  const timeToFinishSale = 120;
+
   let deployer: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
@@ -111,9 +114,6 @@ describe("Launchpad", () => {
   };
 
   describe("when setting up a project launch", () => {
-    const timeToStartSale = 60;
-    const timeToFinishSale = 120;
-
     it("should set up the launch correctly", async () => {
       const tx = launchpad.createLaunch(
         dai,
@@ -486,6 +486,40 @@ describe("Launchpad", () => {
           maxPercentageValue,
       );
       expect(await erc20.balanceOf(user1)).to.eq(teamTokens);
+    });
+  });
+
+  describe("when retrieving project and user info from the contract", () => {
+    it("should return the correct basic project info", async () => {
+      const launch = await createLaunch();
+
+      const launchDetails = await launchpad.getLaunchDetails(1);
+
+      expect(launchDetails.tokenPurchaseDecimals).to.eq(await dai.decimals());
+      expect(launchDetails.launch.targetRaise).to.eq(launch.targetRaise);
+    });
+
+    it("should return investment details", async () => {
+      const launch = await createLaunch();
+      await dai.mint(deployer, ONE_DAI);
+      await Promise.all([
+        advanceToFuture(timeToStartSale),
+        dai.approve(launchpad, ONE_DAI),
+      ]);
+      await launchpad.buyTokens(launch.id, ONE_DAI / 2n);
+      await launchpad.buyTokens(launch.id, ONE_DAI / 2n);
+      const launchDetails = await launchpad.getLaunchDetails(1);
+
+      const userDetails = await launchpad.getUserStats(deployer, launch.id);
+
+      expect(userDetails.tokenAmount).to.eq(
+        launchDetails.launch.tokensToBeEmitted,
+      );
+      expect(userDetails.tokenDecimals).to.eq(await token.decimals());
+      expect(userDetails.nftBalance).to.eq(2);
+      expect(userDetails.purchaseAmount).to.eq(ONE_DAI);
+      expect(userDetails.purchaseDecimals).to.eq(await dai.decimals());
+      expect(userDetails.purchaseSymbol).to.eq(await dai.symbol());
     });
   });
 });

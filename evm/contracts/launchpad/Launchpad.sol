@@ -214,6 +214,16 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     emit TokensPurchased(launchId, msg.sender, amount, tokenAmount);
   }
 
+  function isClaimEnabled(uint32 launchId) public view returns (bool) {
+    Launch storage launch = _launches[launchId];
+    return launch.claimEnabled;
+  }
+
+  modifier whenClaimEnabled(uint32 launchId) {
+    require(isClaimEnabled(launchId), "Claim not enabled");
+    _;
+  }
+
   function isRefundEnabled(uint32 launchId) public view returns (bool) {
     Launch storage launch = _launches[launchId];
     return
@@ -224,11 +234,6 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   modifier whenRefundEnabled(uint32 launchId) {
     require(isRefundEnabled(launchId), "Refund not available");
     _;
-  }
-
-  function isClaimEnabled(uint32 launchId) public view returns (bool) {
-    Launch storage launch = _launches[launchId];
-    return launch.claimEnabled;
   }
 
   function tgeEventLaunchpadToken(
@@ -356,11 +361,6 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     //TODO: Collect v3 fees and distribute them to the staking contract
   }
 
-  modifier whenClaimEnabled(uint32 launchId) {
-    require(isClaimEnabled(launchId), "Claim not enabled");
-    _;
-  }
-
   function checkAllowance(
     address allower,
     uint256 amount,
@@ -423,7 +423,6 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     uint32 launchId
   ) private view returns (Purchase) {
     Launch storage launch = _launches[launchId];
-    require(block.timestamp > launch.saleEnd, "Sale not ended");
 
     return Purchase(launch.purchaseNftAddress);
   }
