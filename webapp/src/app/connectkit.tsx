@@ -11,6 +11,7 @@ import {
   arbitrumSepolia,
   avalancheFuji,
   bscTestnet,
+  localhost,
   polygonAmoy,
 } from "@particle-network/connectkit/chains";
 import { evmWalletConnectors } from "@particle-network/connectkit/evm";
@@ -27,6 +28,10 @@ if (!projectId || !clientKey || !appId) {
 
 const supportChains: Chain[] = [];
 supportChains.push(polygonAmoy, bscTestnet, arbitrumSepolia, avalancheFuji);
+
+if (process.env.NODE_ENV === "development") {
+  supportChains.push(localhost);
+}
 
 const config = createConfig({
   projectId,

@@ -24,10 +24,12 @@ export const deploy = async (hre: HardhatRuntimeEnvironment) => {
 
   const bancorFormula = await deployBancorFormula(hre, deployer);
 
-  console.log({
-    bancorFormula,
-  });
+  console.log("All contracts deployed and test data setup.");
 
   console.log("Performing contract verifications");
   await waitForVerifications();
+
+  console.log({
+    bancorFormula: await bancorFormula.getAddress(),
+  });
 };

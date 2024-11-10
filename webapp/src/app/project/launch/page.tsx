@@ -66,6 +66,7 @@ export default function LaunchToken() {
         dateToUnixTimestamp(params.saleEnd),
         params.purchaseFormula,
         Math.floor(params.reserveRatio * BANCOR_RESERVE_RATIO_PRECISION),
+        true,
         {
           name: params.name,
           symbol: params.symbol,

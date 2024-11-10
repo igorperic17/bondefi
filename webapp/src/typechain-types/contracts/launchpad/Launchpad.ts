@@ -43,6 +43,7 @@ export type LaunchStruct = {
   purchaseNftAddress: AddressLike;
   targetRaise: BigNumberish;
   raised: BigNumberish;
+  tokenAddress: AddressLike;
   tokensToBeEmitted: BigNumberish;
   capPerUser: BigNumberish;
   saleStart: BigNumberish;
@@ -60,6 +61,7 @@ export type LaunchStructOutput = [
   purchaseNftAddress: string,
   targetRaise: bigint,
   raised: bigint,
+  tokenAddress: string,
   tokensToBeEmitted: bigint,
   capPerUser: bigint,
   saleStart: bigint,
@@ -75,6 +77,7 @@ export type LaunchStructOutput = [
   purchaseNftAddress: string;
   targetRaise: bigint;
   raised: bigint;
+  tokenAddress: string;
   tokensToBeEmitted: bigint;
   capPerUser: bigint;
   saleStart: bigint;
@@ -141,8 +144,11 @@ export interface LaunchpadInterface extends Interface {
       | "paused"
       | "refund"
       | "renounceOwnership"
+      | "setERC20Factory"
+      | "setFactories"
       | "setPurchaseFactory"
       | "tgeEvent"
+      | "tgeEventLaunchpadToken"
       | "totalLaunches"
       | "transferOwnership"
       | "unpause"
@@ -179,6 +185,7 @@ export interface LaunchpadInterface extends Interface {
       BigNumberish,
       AddressLike,
       BigNumberish,
+      boolean,
       ProjectDetailsStruct
     ]
   ): string;
@@ -218,12 +225,24 @@ export interface LaunchpadInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "setERC20Factory",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setFactories",
+    values: [AddressLike, AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setPurchaseFactory",
     values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "tgeEvent",
     values: [BigNumberish, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "tgeEventLaunchpadToken",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "totalLaunches",
@@ -280,10 +299,22 @@ export interface LaunchpadInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setERC20Factory",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setFactories",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setPurchaseFactory",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "tgeEvent", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "tgeEventLaunchpadToken",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "totalLaunches",
     data: BytesLike
@@ -456,6 +487,7 @@ export interface Launchpad extends BaseContract {
       saleEnd: BigNumberish,
       purchaseFormula: AddressLike,
       reserveRatio: BigNumberish,
+      createERC20: boolean,
       details: ProjectDetailsStruct
     ],
     [void],
@@ -508,6 +540,18 @@ export interface Launchpad extends BaseContract {
 
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
+  setERC20Factory: TypedContractMethod<
+    [factoryAddress: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  setFactories: TypedContractMethod<
+    [erc20Factory: AddressLike, purchaseFactory: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
   setPurchaseFactory: TypedContractMethod<
     [factoryAddress: AddressLike],
     [void],
@@ -516,6 +560,12 @@ export interface Launchpad extends BaseContract {
 
   tgeEvent: TypedContractMethod<
     [launchId: BigNumberish, tokenAddress: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  tgeEventLaunchpadToken: TypedContractMethod<
+    [launchId: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -566,6 +616,7 @@ export interface Launchpad extends BaseContract {
       saleEnd: BigNumberish,
       purchaseFormula: AddressLike,
       reserveRatio: BigNumberish,
+      createERC20: boolean,
       details: ProjectDetailsStruct
     ],
     [void],
@@ -617,6 +668,16 @@ export interface Launchpad extends BaseContract {
     nameOrSignature: "renounceOwnership"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "setERC20Factory"
+  ): TypedContractMethod<[factoryAddress: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "setFactories"
+  ): TypedContractMethod<
+    [erc20Factory: AddressLike, purchaseFactory: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "setPurchaseFactory"
   ): TypedContractMethod<[factoryAddress: AddressLike], [void], "nonpayable">;
   getFunction(
@@ -626,6 +687,9 @@ export interface Launchpad extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "tgeEventLaunchpadToken"
+  ): TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "totalLaunches"
   ): TypedContractMethod<[], [bigint], "view">;

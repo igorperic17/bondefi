@@ -22,18 +22,20 @@ export const deployLaunchpad = async (
 
 export const deploy = async (
   hre: HardhatRuntimeEnvironment,
+  erc20Factory: AddressLike,
   purchaseFactory: AddressLike,
 ) => {
   const [deployer] = await hre.ethers.getSigners();
 
   const launchpad = await deployLaunchpad(hre, deployer);
-  await launchpad.setPurchaseFactory(purchaseFactory);
+  await launchpad.setFactories(erc20Factory, purchaseFactory);
 
   console.log("All contracts deployed and test data setup.");
-  console.log({
-    launchpad,
-  });
 
   console.log("Performing contract verifications");
   await waitForVerifications();
+
+  console.log({
+    launchpad: await launchpad.getAddress(),
+  });
 };
