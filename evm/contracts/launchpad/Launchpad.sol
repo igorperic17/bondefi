@@ -11,6 +11,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "./Purchase.sol";
 import "./PurchaseFactory.sol";
+import "./token/ERC20Token.sol";
+import "./token/ERC20Factory.sol";
 import "../bancor-formula/IBancorFormula.sol";
 
 struct ProjectDetails {
@@ -28,6 +30,7 @@ struct Launch {
   address purchaseNftAddress; //NFT that represents the purchase
   uint256 targetRaise;
   uint256 raised;
+  address tokenAddress; //Token that will be generated for this launch. It's address(0) if the token is not created by the launchpad
   uint256 tokensToBeEmitted; //Increases with each purchase, this is a virtual reserve to calcualate price of future tokens
   uint128 capPerUser; //purchaseToken, 0 means no cap
   uint32 saleStart;
@@ -42,10 +45,11 @@ struct Launch {
 contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
-  mapping(uint32 => Launch) private launches;
+  mapping(uint32 => Launch) private _launches;
   uint32 public totalLaunches;
 
-  PurchaseFactory private purchaseFactory;
+  PurchaseFactory private _purchaseFactory;
+  ERC20Factory private _erc20Factory;
 
   //This mapping MUST NOT be used to calculate the amount of tokens a user can claim, the NFT is the one that represents that
   mapping(uint32 => mapping(address => uint256)) investments; //investments[launchId][user] => amountInvested
@@ -61,8 +65,20 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
 
   constructor() Ownable(msg.sender) {}
 
-  function setPurchaseFactory(address factoryAddress) external onlyOwner {
-    purchaseFactory = PurchaseFactory(factoryAddress);
+  function setERC20Factory(address factoryAddress) public onlyOwner {
+    _erc20Factory = ERC20Factory(factoryAddress);
+  }
+
+  function setPurchaseFactory(address factoryAddress) public onlyOwner {
+    _purchaseFactory = PurchaseFactory(factoryAddress);
+  }
+
+  function setFactories(
+    address erc20Factory,
+    address purchaseFactory
+  ) external onlyOwner {
+    _erc20Factory = ERC20Factory(erc20Factory);
+    _purchaseFactory = PurchaseFactory(purchaseFactory);
   }
 
   function createLaunch(
@@ -73,19 +89,22 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     uint32 saleEnd,
     address purchaseFormula,
     uint32 reserveRatio,
+    bool createERC20,
     ProjectDetails calldata details
   ) external /* onlyOwner */ {
     require(
-      address(purchaseFactory) != address(0),
+      address(_purchaseFactory) != address(0),
       "No purchase factory defined"
+    );
+    require(
+      address(_erc20Factory) != address(0),
+      "No ERC20 token factory defined"
     );
     require(purchaseFormula != address(0), "No purchase formula defined");
     require(saleEnd > saleStart, "Sale dates are incorrect");
     require(targetRaise > 0, "Zero target raise");
 
-    //TODO: Create ERC20 token already (this is temporary, in future projects will be the ones creating the tokens)
-
-    Launch storage launch = launches[++totalLaunches];
+    Launch storage launch = _launches[++totalLaunches];
     launch.id = totalLaunches;
     launch.purchaseToken = purchaseToken;
     launch.targetRaise = targetRaise;
@@ -96,7 +115,18 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     launch.reserveRatio = reserveRatio;
     launch.details = details;
 
-    launch.purchaseNftAddress = purchaseFactory.createPurchaseManager(
+    if (createERC20) {
+      address projectToken = _erc20Factory.createERC20(
+        details.name,
+        details.symbol,
+        msg.sender, //tokenAdmin
+        address(this) //minter
+      );
+
+      launch.tokenAddress = projectToken;
+    }
+
+    launch.purchaseNftAddress = _purchaseFactory.createPurchaseManager(
       purchaseToken,
       string(abi.encodePacked("IDO ", details.name)),
       string(abi.encodePacked("IDO-", details.symbol)),
@@ -123,7 +153,7 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     uint256 amount
   ) external whenNotPaused nonReentrant {
     require(amount > 0, "Amount must be greater than 0");
-    Launch storage launch = launches[launchId];
+    Launch storage launch = _launches[launchId];
     require(block.timestamp >= launch.saleStart, "Sale not started");
     require(block.timestamp <= launch.saleEnd, "Sale ended");
 
@@ -176,7 +206,7 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   }
 
   function isRefundEnabled(uint32 launchId) public view returns (bool) {
-    Launch storage launch = launches[launchId];
+    Launch storage launch = _launches[launchId];
     return
       !isClaimEnabled(launchId) &&
       (block.timestamp > launch.saleEnd && launch.raised < launch.targetRaise);
@@ -188,19 +218,32 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   }
 
   function isClaimEnabled(uint32 launchId) public view returns (bool) {
-    Launch storage launch = launches[launchId];
+    Launch storage launch = _launches[launchId];
     return launch.claimEnabled;
   }
 
-  function tgeEvent(uint32 launchId, address tokenAddress) external onlyOwner {
-    Launch storage launch = launches[launchId];
+  function tgeEventLaunchpadToken(uint32 launchId) external onlyOwner {
+    tgeEvent(launchId, _launches[launchId].tokenAddress);
+  }
+
+  function tgeEvent(uint32 launchId, address tokenAddress) public onlyOwner {
+    Launch storage launch = _launches[launchId];
     require(launch.id > 0, "Project launch does not exist");
     require(block.timestamp > launch.saleEnd, "Sale not ended");
     require(launch.tokensToBeEmitted > 0, "No tokens to be emitted");
-    require(
-      IERC20(tokenAddress).balanceOf(address(this)) == launch.tokensToBeEmitted,
-      "Not enough funds to fund all claims"
-    );
+
+    if (launch.tokenAddress != address(0)) {
+      //If the ERC20 was created by the launchpad, we mint the required token amount
+      ERC20Token token = ERC20Token(launch.tokenAddress);
+      token.mint(address(this), launch.tokensToBeEmitted);
+      token.renounceRole(token.MINTER_ROLE(), address(this));
+    } else {
+      require(
+        IERC20(tokenAddress).balanceOf(address(this)) ==
+          launch.tokensToBeEmitted,
+        "Not enough funds to fund all claims"
+      );
+    }
 
     IERC20(tokenAddress).safeTransfer(
       launch.purchaseNftAddress,
@@ -269,14 +312,14 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   function getPurchaseFromLaunch(
     uint32 launchId
   ) private view returns (Purchase) {
-    Launch storage launch = launches[launchId];
+    Launch storage launch = _launches[launchId];
     require(block.timestamp > launch.saleEnd, "Sale not ended");
 
     return Purchase(launch.purchaseNftAddress);
   }
 
   function getLaunch(uint32 launchId) external view returns (Launch memory) {
-    return launches[launchId];
+    return _launches[launchId];
   }
 
   function withdrawETH() external onlyOwner {
@@ -312,18 +355,18 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   function getLaunchDetails(
     uint32 launchId
   ) public view returns (LaunchInfo memory launchDetails) {
-    launchDetails.launch = launches[launchId];
+    launchDetails.launch = _launches[launchId];
     launchDetails.tokenPurchaseDecimals = IERC20Metadata(
       launchDetails.launch.purchaseToken
     ).decimals();
   }
 
   function getAllLaunchDetails() external view returns (LaunchInfo[] memory) {
-    LaunchInfo[] memory _launches = new LaunchInfo[](totalLaunches);
+    LaunchInfo[] memory launches = new LaunchInfo[](totalLaunches);
     for (uint32 i = 0; i < totalLaunches; i++) {
-      _launches[i] = getLaunchDetails(i + 1);
+      launches[i] = getLaunchDetails(i + 1);
     }
-    return _launches;
+    return launches;
   }
 
   function getUserStats(
@@ -341,10 +384,10 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
       userStats.purchaseAmount += collateralAmountBalance;
     }
 
-    userStats.purchaseSymbol = IERC20Metadata(launches[launchId].purchaseToken)
+    userStats.purchaseSymbol = IERC20Metadata(_launches[launchId].purchaseToken)
       .symbol();
     userStats.purchaseDecimals = IERC20Metadata(
-      launches[launchId].purchaseToken
+      _launches[launchId].purchaseToken
     ).decimals();
     userStats.tokenDecimals = 18; //userStats.tokenDecimals = IERC20Metadata(purchase.claimableToken()).decimals();
   }

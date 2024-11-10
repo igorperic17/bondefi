@@ -7,4 +7,3 @@ import type * as launchpad from "./launchpad";
 export type { launchpad };
 import type * as test from "./test";
 export type { test };
-export type { ERC20Token } from "./ERC20Token";

@@ -3,6 +3,8 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import {
   BancorFormula__factory,
+  ERC20Factory,
+  ERC20Factory__factory,
   ERC20Token,
   ERC20Token__factory,
   IBancorFormula,
@@ -12,8 +14,8 @@ import {
   Purchase__factory,
   PurchaseFactory,
   PurchaseFactory__factory,
-  TestDAI,
-  TestDAI__factory,
+  TestToken,
+  TestToken__factory,
 } from "../../typechain-types";
 import { advanceToFuture, findLogs } from "../fixtures/blockchain-utils";
 import { createLaunchDetails } from "../fixtures/launch-details";
@@ -23,8 +25,10 @@ describe("Launchpad", () => {
   let formula: IBancorFormula;
   let purchaseBase: Purchase;
   let purchaseFactory: PurchaseFactory;
-  let token: ERC20Token;
-  let dai: TestDAI;
+  let erc20Base: ERC20Token;
+  let erc20Factory: ERC20Factory;
+  let token: TestToken;
+  let dai: TestToken;
   let launchpad: Launchpad;
   let currentBlockTimestamp: number;
 
@@ -39,17 +43,16 @@ describe("Launchpad", () => {
     purchaseFactory = await new PurchaseFactory__factory(deployer).deploy(
       purchaseBase,
     );
+    erc20Base = await new ERC20Token__factory(deployer).deploy();
+    erc20Factory = await new ERC20Factory__factory(deployer).deploy(erc20Base);
   });
 
   beforeEach(async () => {
-    dai = await new TestDAI__factory(deployer).deploy();
+    dai = await new TestToken__factory(deployer).deploy("DAI", "DAI");
     ONE_DAI = ethers.parseUnits("1", await dai.decimals());
-    token = await new ERC20Token__factory(deployer).deploy(
-      "Test Token",
-      "TEST",
-    );
+    token = await new TestToken__factory(deployer).deploy("Test Token", "TST");
     launchpad = await new Launchpad__factory(deployer).deploy();
-    await launchpad.setPurchaseFactory(purchaseFactory);
+    await launchpad.setFactories(erc20Factory, purchaseFactory);
 
     currentBlockTimestamp =
       (await ethers.provider.getBlock("latest"))?.timestamp ?? 0;
@@ -79,6 +82,7 @@ describe("Launchpad", () => {
       currentBlockTimestamp + 120,
       formula,
       reserveRatio(0.5),
+      false,
       createLaunchDetails(),
     );
 
@@ -98,6 +102,7 @@ describe("Launchpad", () => {
         currentBlockTimestamp + timeToFinishSale,
         formula,
         reserveRatio(0.5),
+        true,
         createLaunchDetails(),
       );
 
@@ -108,6 +113,32 @@ describe("Launchpad", () => {
         launchpad.getEvent("LaunchCreated"),
       );
       expect(logs[0].args.launchId).to.eq(1);
+    });
+
+    it("should create an ERC20 token when asked at launch", async () => {
+      const tx = launchpad.createLaunch(
+        dai,
+        ethers.parseUnits("1000", await dai.decimals()),
+        0,
+        currentBlockTimestamp + timeToStartSale,
+        currentBlockTimestamp + timeToFinishSale,
+        formula,
+        reserveRatio(0.5),
+        true,
+        createLaunchDetails(),
+      );
+
+      await expect(tx).not.reverted;
+      const tokenAddress = (
+        await launchpad.getLaunch(await launchpad.totalLaunches())
+      ).tokenAddress;
+
+      const logs = await findLogs(
+        tx,
+        erc20Factory,
+        erc20Factory.getEvent("ERC20Created"),
+      );
+      expect(logs.length).to.eq(1);
     });
 
     it("should fail to buy tokens when the sale hasn't started yet", async () => {
@@ -245,7 +276,7 @@ describe("Launchpad", () => {
       expect(await launchpad.isClaimEnabled(launch.id)).to.be.false;
     });
 
-    it("should allow claiming after the TGE event happens", async () => {
+    it("should allow claiming after the TGE event happens, using custom token", async () => {
       const launch = await createLaunch();
       await dai.mint(deployer, launch.targetRaise);
       await Promise.all([
@@ -266,7 +297,7 @@ describe("Launchpad", () => {
       expect(await launchpad.isClaimEnabled(launch.id)).to.be.true;
     });
 
-    it("should distribute the tokens to the user after claiming", async () => {
+    it("should distribute the tokens to the user after claiming, using custom token", async () => {
       const launch = await createLaunch();
       await dai.mint(deployer, launch.targetRaise);
       await Promise.all([

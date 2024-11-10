@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
  * different roles - head to its documentation for details.
  *
  */
-contract TestDAI is AccessControl, ERC20 {
+contract TestToken is AccessControl, ERC20 {
   bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
   /**
@@ -23,7 +23,7 @@ contract TestDAI is AccessControl, ERC20 {
    *
    * See {ERC20-constructor}.
    */
-  constructor() ERC20("Test DAI", "TDAI") {
+  constructor(string memory name, string memory symbol) ERC20(name, symbol) {
     _grantRole(DEFAULT_ADMIN_ROLE, _msgSender());
     _grantRole(MINTER_ROLE, _msgSender());
   }

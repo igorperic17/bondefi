@@ -33,7 +33,7 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
   //Index is NFT token id
   mapping(uint256 => PurchaseBalance) public purchaseBalances;
 
-  constructor() ERC721("Template", "TPL") Ownable(address(0xdEad)) {
+  constructor() ERC721("", "") Ownable(address(0xdEad)) {
     //This contract is meant to be cloned
   }
 
