@@ -33,6 +33,8 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
   //Index is NFT token id
   mapping(uint256 => PurchaseBalance) public purchaseBalances;
 
+  event FeesCollected(address indexed to, uint256 amount);
+
   constructor() ERC721("", "") Ownable(address(0xdEad)) {
     //This contract is meant to be cloned
   }
@@ -54,6 +56,15 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
 
   function setTokenAddress(address _claimableToken) external onlyOwner {
     claimableToken = IERC20(_claimableToken);
+  }
+
+  function collectFees(address to, uint256 amount) external onlyOwner {
+    require(to != address(0), "Invalid address");
+    require(amount > 0, "Amount must be greater than 0");
+
+    collateralToken.safeTransfer(to, amount);
+
+    emit FeesCollected(to, amount);
   }
 
   function mint(
@@ -105,12 +116,7 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
       address(collateralToken) != address(0),
       "Collateral address not set"
     );
-    collateralToken.approve(
-      address(this),
-      purchaseBalances[tokenId].collateralAmount
-    );
-    collateralToken.safeTransferFrom(
-      address(this),
+    collateralToken.safeTransfer(
       _ownerOf(tokenId),
       purchaseBalances[tokenId].collateralAmount
     );
@@ -124,12 +130,7 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
       address(claimableToken) != address(0),
       "Claimable token address not set"
     );
-    claimableToken.approve(
-      address(this),
-      purchaseBalances[tokenId].collateralAmount
-    );
-    claimableToken.safeTransferFrom(
-      address(this),
+    claimableToken.safeTransfer(
       _ownerOf(tokenId),
       purchaseBalances[tokenId].tokenAmount
     );

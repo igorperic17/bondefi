@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./Purchase.sol";
 import "./PurchaseFactory.sol";
@@ -39,6 +40,8 @@ struct Launch {
   address purchaseFormula;
   uint32 reserveRatio; //Percentage, value between 1 and 1000000
   bool claimEnabled;
+  uint32 launchpadFee; //Percentage, value between 1 and 1000000
+  uint32 launchpadFeeToken; //Percentage, value between 1 and 1000000
   ProjectDetails details; //TODO: This info should live in a backend instead, and just become calldata in createLaunch
 }
 
@@ -47,6 +50,8 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
 
   mapping(uint32 => Launch) private _launches;
   uint32 public totalLaunches;
+
+  uint32 public constant MAX_PERCENT = 1000000;
 
   PurchaseFactory private _purchaseFactory;
   ERC20Factory private _erc20Factory;
@@ -90,6 +95,8 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     address purchaseFormula,
     uint32 reserveRatio,
     bool createERC20,
+    uint32 launchpadFee,
+    uint32 launchpadFeeToken,
     ProjectDetails calldata details
   ) external /* onlyOwner */ {
     require(
@@ -113,6 +120,8 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     launch.saleEnd = saleEnd;
     launch.purchaseFormula = purchaseFormula;
     launch.reserveRatio = reserveRatio;
+    launch.launchpadFee = launchpadFee;
+    launch.launchpadFeeToken = launchpadFeeToken;
     launch.details = details;
 
     if (createERC20) {
@@ -222,46 +231,121 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     return launch.claimEnabled;
   }
 
-  function tgeEventLaunchpadToken(uint32 launchId) external onlyOwner {
-    tgeEvent(launchId, _launches[launchId].tokenAddress);
+  function tgeEventLaunchpadToken(
+    uint32 launchId,
+    uint256 tokensForProject,
+    address projectAddress
+  ) external onlyOwner {
+    require(
+      _launches[launchId].tokenAddress != address(0),
+      "No token defined for TGE, use the tgeEvent function instead"
+    );
+    tgeEvent(
+      launchId,
+      tokensForProject,
+      projectAddress,
+      _launches[launchId].tokenAddress
+    );
   }
 
-  function tgeEvent(uint32 launchId, address tokenAddress) public onlyOwner {
+  //TODO provide some validation that the address is correct (maybe through NFT or a signature, as mode of whitelisting? maybe even a merkle tree)
+  function tgeEvent(
+    uint32 launchId,
+    uint256 tokensForProject,
+    address projectAddress,
+    address tokenAddress
+  ) public onlyOwner {
     Launch storage launch = _launches[launchId];
     require(launch.id > 0, "Project launch does not exist");
+    require(
+      projectAddress != address(0) || tokensForProject == 0,
+      "Invalid project address"
+    );
     require(block.timestamp > launch.saleEnd, "Sale not ended");
     require(launch.tokensToBeEmitted > 0, "No tokens to be emitted");
 
-    if (launch.tokenAddress != address(0)) {
-      //If the ERC20 was created by the launchpad, we mint the required token amount
+    (
+      uint256 tokensForLaunchpad,
+      uint256 tokensNeeded,
+      uint256 collateralForLaunchpad,
+      uint256 collateralForLiquidity
+    ) = distribution(
+        tokensForProject,
+        launch.tokensToBeEmitted,
+        launch.launchpadFee,
+        launch.launchpadFeeToken,
+        launch.raised
+      );
+
+    bool tokenCreatedByLaunchpad = launch.tokenAddress != address(0);
+    if (tokenCreatedByLaunchpad) {
       ERC20Token token = ERC20Token(launch.tokenAddress);
-      token.mint(address(this), launch.tokensToBeEmitted);
-      token.renounceRole(token.MINTER_ROLE(), address(this));
+      token.mint(address(this), tokensNeeded);
     } else {
       require(
-        IERC20(tokenAddress).balanceOf(address(this)) ==
-          launch.tokensToBeEmitted,
+        IERC20(tokenAddress).balanceOf(address(this)) == tokensNeeded,
         "Not enough funds to fund all claims"
       );
     }
 
-    IERC20(tokenAddress).safeTransfer(
+    Purchase purchase = Purchase(launch.purchaseNftAddress);
+    purchase.setTokenAddress(tokenAddress);
+
+    IERC20 projectToken = IERC20(tokenAddress);
+    if (tokensForProject > 0) {
+      projectToken.safeTransfer(projectAddress, tokensForProject);
+    }
+    if (tokensForLaunchpad > 0) {
+      projectToken.safeTransfer(msg.sender, tokensForLaunchpad);
+    }
+    projectToken.safeTransfer(
       launch.purchaseNftAddress,
       launch.tokensToBeEmitted
     );
 
-    Purchase(launch.purchaseNftAddress).setTokenAddress(tokenAddress);
+    if (collateralForLaunchpad > 0) {
+      purchase.collectFees(msg.sender, collateralForLaunchpad);
+    }
 
-    deployLiquidity(launchId);
+    deployLiquidity(launchId, collateralForLiquidity);
     setupStaking(launchId);
+
+    // Uncomment next few lines if we want to renounce minter role automatically (we won't allow fixing problems at launch with missing token deliveries after TGE)
+    // if (tokenCreatedByLaunchpad) {
+    //   ERC20Token token = ERC20Token(launch.tokenAddress);
+    //   token.renounceRole(token.MINTER_ROLE(), address(this));
+    // }
 
     launch.claimEnabled = true;
 
     emit TGE(launchId, tokenAddress);
   }
 
-  function deployLiquidity(uint32 launchId) private {
-    //TODO: Deploy liquidity with UniswapV3
+  function distribution(
+    uint256 tokensForProject,
+    uint256 tokensToBeEmitted,
+    uint32 launchpadFee,
+    uint32 launchpadFeeToken,
+    uint256 raised
+  )
+    private
+    pure
+    returns (
+      uint256 tokensForLaunchpad,
+      uint256 tokensNeeded,
+      uint256 collateralForLaunchpad,
+      uint256 collateralForLiquidity
+    )
+  {
+    tokensForLaunchpad = (((tokensToBeEmitted + tokensForProject) *
+      launchpadFeeToken) / MAX_PERCENT);
+    tokensNeeded = tokensToBeEmitted + tokensForProject + tokensForLaunchpad;
+    collateralForLaunchpad = ((raised * launchpadFee) / MAX_PERCENT);
+    collateralForLiquidity = raised - collateralForLaunchpad;
+  }
+
+  function deployLiquidity(uint32 launchId, uint256 collateral) private {
+    //TODO
   }
 
   function setupStaking(uint32 launchId) private {
