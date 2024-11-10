@@ -22,11 +22,12 @@ task("deploy-bancor", "Deploys bancor formula").setAction(async (_, hre) => {
 });
 
 task("deploy-launchpad", "Deploys launchpad")
-  .addOptionalVariadicPositionalParam("args")
+  .addPositionalParam("purchaseFactory")
   .setAction(async ({ purchaseFactory }, hre) => {
     const { deploy } = require("./scripts/deploy-launchpad");
     await deploy(hre, purchaseFactory);
   });
+
 
 task("verify-contract", "Verifies a contract at an address")
   .addPositionalParam("address")

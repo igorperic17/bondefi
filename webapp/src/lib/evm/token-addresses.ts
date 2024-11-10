@@ -9,7 +9,7 @@ export const getReserveTokenByAddress = (address: string) =>
   RESERVE_TOKENS.find((token) => token.address === address);
 
 export const EVM_LAUNCHPAD_ADDRESS =
-  "0x8b1a920F6A4FCE81Cdc7d19a14527d3F545FB744";
+  "0x773C801c8eDD394444eBD654967F2A16CCAD9D46";
 
 export const BANCOR_FORMULA_ADDRESS =
   "0xC0277a10d52A8b42e83cB5b7806abe7db027Fc11";
