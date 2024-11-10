@@ -6,7 +6,9 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
+    "start-node": "hardhat node",
     "report": "REPORT_GAS=1 hardhat test",
+    "deploy:local": "hardhat deploy-all --network hardhat",
     "deploy-all:testnet": "hardhat deploy-all --network polygonAmoy",
     "deploy-bancor:testnet": "hardhat deploy-bancor --network polygonAmoy",
     "deploy-launchpad:testnet": "hardhat deploy-launchpad --network polygonAmoy",

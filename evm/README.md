@@ -16,4 +16,4 @@ This is the space for Bondefi's EVM-based bonding curve implementation
 - `yarn test`
 - `yarn report` to run the unit tests and generate a gas report
 - `yarn compile` to generate the typescript typing for the solidity contracts
-- `yarn format` to apply the source formatter to the whole project
+- `yarn start-node` to run an EVM node locally
