@@ -374,6 +374,19 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   }
 
   function claim(
+    uint32 launchId,
+    uint256 tokenId
+  ) external whenNotPaused nonReentrant whenClaimEnabled(launchId) {
+    Purchase purchase = getPurchaseFromLaunch(launchId);
+    require(
+      purchase.ownerOf(tokenId) == msg.sender,
+      "Not the owner of the NFT"
+    );
+
+    purchase.claim(tokenId);
+  }
+
+  function claimAll(
     uint32 launchId
   ) external whenNotPaused nonReentrant whenClaimEnabled(launchId) {
     Purchase purchase = getPurchaseFromLaunch(launchId);
@@ -384,6 +397,19 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   }
 
   function refund(
+    uint32 launchId,
+    uint256 tokenId
+  ) external whenNotPaused nonReentrant whenRefundEnabled(launchId) {
+    Purchase purchase = getPurchaseFromLaunch(launchId);
+    require(
+      purchase.ownerOf(tokenId) == msg.sender,
+      "Not the owner of the NFT"
+    );
+
+    purchase.refund(tokenId);
+  }
+
+  function refundAll(
     uint32 launchId
   ) external whenNotPaused nonReentrant whenRefundEnabled(launchId) {
     Purchase purchase = getPurchaseFromLaunch(launchId);
@@ -427,6 +453,11 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     uint8 tokenPurchaseDecimals;
   }
 
+  struct PurchaseInfo {
+    uint256 tokenId;
+    PurchaseBalance balance;
+  }
+
   struct UserStats {
     uint256 nftBalance;
     uint256 purchaseAmount;
@@ -434,6 +465,7 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     uint256 purchaseDecimals;
     uint256 tokenAmount;
     uint256 tokenDecimals;
+    PurchaseInfo[] purchaseInfo;
   }
 
   function getLaunchDetails(
@@ -459,13 +491,19 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   ) external view returns (UserStats memory userStats) {
     Purchase purchase = getPurchaseFromLaunch(launchId);
     userStats.nftBalance = purchase.balanceOf(user);
+    userStats.purchaseInfo = new PurchaseInfo[](userStats.nftBalance);
 
     for (uint32 i = 0; i < userStats.nftBalance; i++) {
-      (uint256 collateralAmountBalance, uint256 tokenAmountBalance) = purchase
-        .purchaseBalances(purchase.tokenOfOwnerByIndex(msg.sender, i));
+      uint256 tokenId = purchase.tokenOfOwnerByIndex(msg.sender, i);
+      PurchaseBalance memory balance = purchase.purchaseBalances(tokenId);
 
-      userStats.tokenAmount += tokenAmountBalance;
-      userStats.purchaseAmount += collateralAmountBalance;
+      userStats.tokenAmount += balance.tokenAmount;
+      userStats.purchaseAmount += balance.collateralAmount;
+
+      userStats.purchaseInfo[i] = PurchaseInfo({
+        tokenId: tokenId,
+        balance: balance
+      });
     }
 
     userStats.purchaseSymbol = IERC20Metadata(_launches[launchId].purchaseToken)

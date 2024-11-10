@@ -259,7 +259,7 @@ describe("Launchpad", () => {
       expect(await launchpad.isClaimEnabled(launch.id)).to.be.false;
     });
 
-    it("should return the funds when a refund is requested", async () => {
+    it("should return the funds when a refund ALL is requested", async () => {
       const launch = await createLaunch();
       await dai.mint(deployer, ONE_DAI);
       await Promise.all([
@@ -274,14 +274,37 @@ describe("Launchpad", () => {
       const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
       await advanceToFuture(timeAfterSale);
 
-      const tx = launchpad.refund(launch.id);
+      const tx = launchpad.refundAll(launch.id);
+      await expect(tx).to.not.reverted;
 
       const balanceAfterRefund = await dai.balanceOf(deployer);
 
-      await tx;
+      expect(balanceBeforeBuy).to.be.gt(balanceAfterBuy);
+      expect(balanceBeforeBuy).to.be.eq(balanceAfterRefund);
+    });
+
+    it("should return the funds when a single refund is requested", async () => {
+      const launch = await createLaunch();
+      await dai.mint(deployer, ONE_DAI);
+      await Promise.all([
+        advanceToFuture(timeToStartSale),
+        dai.approve(launchpad, ONE_DAI),
+      ]);
+
+      const balanceBeforeBuy = await dai.balanceOf(deployer);
+      await launchpad.buyTokens(launch.id, ONE_DAI / 2n);
+      const balanceAfterBuy = await dai.balanceOf(deployer);
+
+      const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
+      await advanceToFuture(timeAfterSale);
+
+      const tx = launchpad.refund(launch.id, 1);
+
+      const balanceAfterRefund = await dai.balanceOf(deployer);
+
       await expect(tx).to.not.reverted;
       expect(balanceBeforeBuy).to.be.gt(balanceAfterBuy);
-      expect(balanceAfterRefund).to.be.eq(balanceAfterRefund);
+      expect(balanceAfterRefund).to.be.eq(balanceBeforeBuy / 2n);
     });
 
     it("should not allow claiming before TGE event happens, even after successful raise", async () => {
@@ -339,7 +362,7 @@ describe("Launchpad", () => {
 
       await launchpad.tgeEvent(launch.id, 0, ethers.ZeroAddress, token);
 
-      const tx = launchpad.claim(launch.id);
+      const tx = launchpad.claimAll(launch.id);
       await expect(tx).not.reverted;
       expect(await token.balanceOf(deployer)).to.eq(tokensToBeEmitted);
     });
@@ -360,7 +383,7 @@ describe("Launchpad", () => {
       expect(await launchpad.isClaimEnabled(launch.id)).to.be.true;
     });
 
-    it("should distribute the tokens to the user after claiming, using launchpad-created token", async () => {
+    it("should distribute the tokens to the user after claiming ALL, using launchpad-created token", async () => {
       const launch = await createLaunch({ deployERC20: true });
       await dai.mint(deployer, launch.targetRaise);
       await Promise.all([
@@ -381,9 +404,45 @@ describe("Launchpad", () => {
 
       await launchpad.tgeEventLaunchpadToken(launch.id, 0, ethers.ZeroAddress);
 
-      const tx = launchpad.claim(launch.id);
+      const tx = launchpad.claimAll(launch.id);
       await expect(tx).not.reverted;
       expect(await erc20.balanceOf(deployer)).to.eq(tokensToBeEmitted);
+    });
+
+    it("should distribute the tokens to the user after claiming a single one, using launchpad-created token", async () => {
+      const launch = await createLaunch({ deployERC20: true });
+      await dai.mint(deployer, launch.targetRaise);
+      await Promise.all([
+        advanceToFuture(timeToStartSale),
+        dai.approve(launchpad, launch.targetRaise),
+      ]);
+      const buyTokensTx = launchpad.buyTokens(
+        launch.id,
+        launch.targetRaise / 2n,
+      );
+      await buyTokensTx;
+      const tokenAmountBought = (
+        await findLogs(
+          buyTokensTx,
+          launchpad,
+          launchpad.getEvent("TokensPurchased"),
+        )
+      )[0].args.tokenAmount;
+      await launchpad.buyTokens(launch.id, launch.targetRaise / 2n);
+      const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
+      await advanceToFuture(timeAfterSale);
+
+      const erc20 = IERC20__factory.connect(
+        (await launchpad.getLaunch(launch.id)).tokenAddress,
+        ethers.provider,
+      );
+      expect(await erc20.balanceOf(deployer)).to.eq(0);
+
+      await launchpad.tgeEventLaunchpadToken(launch.id, 0, ethers.ZeroAddress);
+
+      const tx = launchpad.claim(launch.id, 1);
+      await expect(tx).not.reverted;
+      expect(await erc20.balanceOf(deployer)).to.eq(tokenAmountBought);
     });
 
     it("should distribute launchpad and project tokens correctly", async () => {

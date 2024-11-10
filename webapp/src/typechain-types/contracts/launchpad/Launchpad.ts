@@ -52,6 +52,8 @@ export type LaunchStruct = {
   purchaseFormula: AddressLike;
   reserveRatio: BigNumberish;
   claimEnabled: boolean;
+  launchpadFee: BigNumberish;
+  launchpadFeeToken: BigNumberish;
   details: ProjectDetailsStruct;
 };
 
@@ -70,6 +72,8 @@ export type LaunchStructOutput = [
   purchaseFormula: string,
   reserveRatio: bigint,
   claimEnabled: boolean,
+  launchpadFee: bigint,
+  launchpadFeeToken: bigint,
   details: ProjectDetailsStructOutput
 ] & {
   id: bigint;
@@ -86,8 +90,20 @@ export type LaunchStructOutput = [
   purchaseFormula: string;
   reserveRatio: bigint;
   claimEnabled: boolean;
+  launchpadFee: bigint;
+  launchpadFeeToken: bigint;
   details: ProjectDetailsStructOutput;
 };
+
+export type PurchaseBalanceStruct = {
+  collateralAmount: BigNumberish;
+  tokenAmount: BigNumberish;
+};
+
+export type PurchaseBalanceStructOutput = [
+  collateralAmount: bigint,
+  tokenAmount: bigint
+] & { collateralAmount: bigint; tokenAmount: bigint };
 
 export declare namespace Launchpad {
   export type LaunchInfoStruct = {
@@ -100,6 +116,16 @@ export declare namespace Launchpad {
     tokenPurchaseDecimals: bigint
   ] & { launch: LaunchStructOutput; tokenPurchaseDecimals: bigint };
 
+  export type PurchaseInfoStruct = {
+    tokenId: BigNumberish;
+    balance: PurchaseBalanceStruct;
+  };
+
+  export type PurchaseInfoStructOutput = [
+    tokenId: bigint,
+    balance: PurchaseBalanceStructOutput
+  ] & { tokenId: bigint; balance: PurchaseBalanceStructOutput };
+
   export type UserStatsStruct = {
     nftBalance: BigNumberish;
     purchaseAmount: BigNumberish;
@@ -107,6 +133,7 @@ export declare namespace Launchpad {
     purchaseDecimals: BigNumberish;
     tokenAmount: BigNumberish;
     tokenDecimals: BigNumberish;
+    purchaseInfo: Launchpad.PurchaseInfoStruct[];
   };
 
   export type UserStatsStructOutput = [
@@ -115,7 +142,8 @@ export declare namespace Launchpad {
     purchaseSymbol: string,
     purchaseDecimals: bigint,
     tokenAmount: bigint,
-    tokenDecimals: bigint
+    tokenDecimals: bigint,
+    purchaseInfo: Launchpad.PurchaseInfoStructOutput[]
   ] & {
     nftBalance: bigint;
     purchaseAmount: bigint;
@@ -123,14 +151,17 @@ export declare namespace Launchpad {
     purchaseDecimals: bigint;
     tokenAmount: bigint;
     tokenDecimals: bigint;
+    purchaseInfo: Launchpad.PurchaseInfoStructOutput[];
   };
 }
 
 export interface LaunchpadInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "MAX_PERCENT"
       | "buyTokens"
       | "claim"
+      | "claimAll"
       | "claimFees"
       | "createLaunch"
       | "getAllLaunchDetails"
@@ -143,6 +174,7 @@ export interface LaunchpadInterface extends Interface {
       | "pause"
       | "paused"
       | "refund"
+      | "refundAll"
       | "renounceOwnership"
       | "setERC20Factory"
       | "setFactories"
@@ -167,10 +199,21 @@ export interface LaunchpadInterface extends Interface {
   ): EventFragment;
 
   encodeFunctionData(
+    functionFragment: "MAX_PERCENT",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "buyTokens",
     values: [BigNumberish, BigNumberish]
   ): string;
-  encodeFunctionData(functionFragment: "claim", values: [BigNumberish]): string;
+  encodeFunctionData(
+    functionFragment: "claim",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "claimAll",
+    values: [BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "claimFees",
     values: [BigNumberish]
@@ -186,6 +229,8 @@ export interface LaunchpadInterface extends Interface {
       AddressLike,
       BigNumberish,
       boolean,
+      BigNumberish,
+      BigNumberish,
       ProjectDetailsStruct
     ]
   ): string;
@@ -218,6 +263,10 @@ export interface LaunchpadInterface extends Interface {
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "refund",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "refundAll",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -238,11 +287,11 @@ export interface LaunchpadInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "tgeEvent",
-    values: [BigNumberish, AddressLike]
+    values: [BigNumberish, BigNumberish, AddressLike, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "tgeEventLaunchpadToken",
-    values: [BigNumberish]
+    values: [BigNumberish, BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "totalLaunches",
@@ -262,8 +311,13 @@ export interface LaunchpadInterface extends Interface {
     values?: undefined
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "MAX_PERCENT",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "buyTokens", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "claimAll", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "claimFees", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "createLaunch",
@@ -294,6 +348,7 @@ export interface LaunchpadInterface extends Interface {
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "refund", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "refundAll", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "renounceOwnership",
     data: BytesLike
@@ -464,13 +519,21 @@ export interface Launchpad extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  MAX_PERCENT: TypedContractMethod<[], [bigint], "view">;
+
   buyTokens: TypedContractMethod<
     [launchId: BigNumberish, amount: BigNumberish],
     [void],
     "nonpayable"
   >;
 
-  claim: TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
+  claim: TypedContractMethod<
+    [launchId: BigNumberish, tokenId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  claimAll: TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
 
   claimFees: TypedContractMethod<
     [launchId: BigNumberish],
@@ -488,6 +551,8 @@ export interface Launchpad extends BaseContract {
       purchaseFormula: AddressLike,
       reserveRatio: BigNumberish,
       createERC20: boolean,
+      launchpadFee: BigNumberish,
+      launchpadFeeToken: BigNumberish,
       details: ProjectDetailsStruct
     ],
     [void],
@@ -536,7 +601,17 @@ export interface Launchpad extends BaseContract {
 
   paused: TypedContractMethod<[], [boolean], "view">;
 
-  refund: TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
+  refund: TypedContractMethod<
+    [launchId: BigNumberish, tokenId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  refundAll: TypedContractMethod<
+    [launchId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
 
   renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
 
@@ -559,13 +634,22 @@ export interface Launchpad extends BaseContract {
   >;
 
   tgeEvent: TypedContractMethod<
-    [launchId: BigNumberish, tokenAddress: AddressLike],
+    [
+      launchId: BigNumberish,
+      tokensForProject: BigNumberish,
+      projectAddress: AddressLike,
+      tokenAddress: AddressLike
+    ],
     [void],
     "nonpayable"
   >;
 
   tgeEventLaunchpadToken: TypedContractMethod<
-    [launchId: BigNumberish],
+    [
+      launchId: BigNumberish,
+      tokensForProject: BigNumberish,
+      projectAddress: AddressLike
+    ],
     [void],
     "nonpayable"
   >;
@@ -593,6 +677,9 @@ export interface Launchpad extends BaseContract {
   ): T;
 
   getFunction(
+    nameOrSignature: "MAX_PERCENT"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "buyTokens"
   ): TypedContractMethod<
     [launchId: BigNumberish, amount: BigNumberish],
@@ -601,6 +688,13 @@ export interface Launchpad extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "claim"
+  ): TypedContractMethod<
+    [launchId: BigNumberish, tokenId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "claimAll"
   ): TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "claimFees"
@@ -617,6 +711,8 @@ export interface Launchpad extends BaseContract {
       purchaseFormula: AddressLike,
       reserveRatio: BigNumberish,
       createERC20: boolean,
+      launchpadFee: BigNumberish,
+      launchpadFeeToken: BigNumberish,
       details: ProjectDetailsStruct
     ],
     [void],
@@ -663,6 +759,13 @@ export interface Launchpad extends BaseContract {
   ): TypedContractMethod<[], [boolean], "view">;
   getFunction(
     nameOrSignature: "refund"
+  ): TypedContractMethod<
+    [launchId: BigNumberish, tokenId: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "refundAll"
   ): TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "renounceOwnership"
@@ -683,13 +786,26 @@ export interface Launchpad extends BaseContract {
   getFunction(
     nameOrSignature: "tgeEvent"
   ): TypedContractMethod<
-    [launchId: BigNumberish, tokenAddress: AddressLike],
+    [
+      launchId: BigNumberish,
+      tokensForProject: BigNumberish,
+      projectAddress: AddressLike,
+      tokenAddress: AddressLike
+    ],
     [void],
     "nonpayable"
   >;
   getFunction(
     nameOrSignature: "tgeEventLaunchpadToken"
-  ): TypedContractMethod<[launchId: BigNumberish], [void], "nonpayable">;
+  ): TypedContractMethod<
+    [
+      launchId: BigNumberish,
+      tokensForProject: BigNumberish,
+      projectAddress: AddressLike
+    ],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "totalLaunches"
   ): TypedContractMethod<[], [bigint], "view">;

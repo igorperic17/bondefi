@@ -23,6 +23,16 @@ import type {
   TypedContractMethod,
 } from "../../common";
 
+export type PurchaseBalanceStruct = {
+  collateralAmount: BigNumberish;
+  tokenAmount: BigNumberish;
+};
+
+export type PurchaseBalanceStructOutput = [
+  collateralAmount: bigint,
+  tokenAmount: bigint
+] & { collateralAmount: bigint; tokenAmount: bigint };
+
 export interface PurchaseInterface extends Interface {
   getFunction(
     nameOrSignature:
@@ -32,6 +42,7 @@ export interface PurchaseInterface extends Interface {
       | "claimEnabled"
       | "claimableToken"
       | "collateralToken"
+      | "collectFees"
       | "enableClaim"
       | "getApproved"
       | "initialize"
@@ -67,6 +78,7 @@ export interface PurchaseInterface extends Interface {
     nameOrSignatureOrTopic:
       | "Approval"
       | "ApprovalForAll"
+      | "FeesCollected"
       | "OwnershipTransferred"
       | "Transfer"
   ): EventFragment;
@@ -91,6 +103,10 @@ export interface PurchaseInterface extends Interface {
   encodeFunctionData(
     functionFragment: "collateralToken",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "collectFees",
+    values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "enableClaim",
@@ -207,6 +223,10 @@ export interface PurchaseInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "collateralToken",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "collectFees",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -337,6 +357,19 @@ export namespace ApprovalForAllEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace FeesCollectedEvent {
+  export type InputTuple = [to: AddressLike, amount: BigNumberish];
+  export type OutputTuple = [to: string, amount: bigint];
+  export interface OutputObject {
+    to: string;
+    amount: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace OwnershipTransferredEvent {
   export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
   export type OutputTuple = [previousOwner: string, newOwner: string];
@@ -427,6 +460,12 @@ export interface Purchase extends BaseContract {
 
   collateralToken: TypedContractMethod<[], [string], "view">;
 
+  collectFees: TypedContractMethod<
+    [to: AddressLike, amount: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   enableClaim: TypedContractMethod<[], [void], "nonpayable">;
 
   getApproved: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
@@ -472,8 +511,8 @@ export interface Purchase extends BaseContract {
   ownerOf: TypedContractMethod<[tokenId: BigNumberish], [string], "view">;
 
   purchaseBalances: TypedContractMethod<
-    [arg0: BigNumberish],
-    [[bigint, bigint] & { collateralAmount: bigint; tokenAmount: bigint }],
+    [tokenId: BigNumberish],
+    [PurchaseBalanceStructOutput],
     "view"
   >;
 
@@ -575,6 +614,13 @@ export interface Purchase extends BaseContract {
     nameOrSignature: "collateralToken"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "collectFees"
+  ): TypedContractMethod<
+    [to: AddressLike, amount: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "enableClaim"
   ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
@@ -632,8 +678,8 @@ export interface Purchase extends BaseContract {
   getFunction(
     nameOrSignature: "purchaseBalances"
   ): TypedContractMethod<
-    [arg0: BigNumberish],
-    [[bigint, bigint] & { collateralAmount: bigint; tokenAmount: bigint }],
+    [tokenId: BigNumberish],
+    [PurchaseBalanceStructOutput],
     "view"
   >;
   getFunction(
@@ -728,6 +774,13 @@ export interface Purchase extends BaseContract {
     ApprovalForAllEvent.OutputObject
   >;
   getEvent(
+    key: "FeesCollected"
+  ): TypedContractEvent<
+    FeesCollectedEvent.InputTuple,
+    FeesCollectedEvent.OutputTuple,
+    FeesCollectedEvent.OutputObject
+  >;
+  getEvent(
     key: "OwnershipTransferred"
   ): TypedContractEvent<
     OwnershipTransferredEvent.InputTuple,
@@ -763,6 +816,17 @@ export interface Purchase extends BaseContract {
       ApprovalForAllEvent.InputTuple,
       ApprovalForAllEvent.OutputTuple,
       ApprovalForAllEvent.OutputObject
+    >;
+
+    "FeesCollected(address,uint256)": TypedContractEvent<
+      FeesCollectedEvent.InputTuple,
+      FeesCollectedEvent.OutputTuple,
+      FeesCollectedEvent.OutputObject
+    >;
+    FeesCollected: TypedContractEvent<
+      FeesCollectedEvent.InputTuple,
+      FeesCollectedEvent.OutputTuple,
+      FeesCollectedEvent.OutputObject
     >;
 
     "OwnershipTransferred(address,address)": TypedContractEvent<

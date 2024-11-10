@@ -31,7 +31,7 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
   bool public claimEnabled;
 
   //Index is NFT token id
-  mapping(uint256 => PurchaseBalance) public purchaseBalances;
+  mapping(uint256 => PurchaseBalance) private _purchaseBalances;
 
   event FeesCollected(address indexed to, uint256 amount);
 
@@ -54,6 +54,12 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
     _transferOwnership(owner);
   }
 
+  function purchaseBalances(
+    uint256 tokenId
+  ) external view returns (PurchaseBalance memory) {
+    return _purchaseBalances[tokenId];
+  }
+
   function setTokenAddress(address _claimableToken) external onlyOwner {
     claimableToken = IERC20(_claimableToken);
   }
@@ -74,8 +80,8 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
   ) external onlyOwner {
     super._mint(buyer, ++lastPurchaseId);
 
-    purchaseBalances[lastPurchaseId].collateralAmount = collateralAmount;
-    purchaseBalances[lastPurchaseId].tokenAmount = tokenAmount;
+    _purchaseBalances[lastPurchaseId].collateralAmount = collateralAmount;
+    _purchaseBalances[lastPurchaseId].tokenAmount = tokenAmount;
   }
 
   function setRefundState(bool enabled) external onlyOwner {
@@ -118,10 +124,10 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
     );
     collateralToken.safeTransfer(
       _ownerOf(tokenId),
-      purchaseBalances[tokenId].collateralAmount
+      _purchaseBalances[tokenId].collateralAmount
     );
 
-    delete purchaseBalances[tokenId];
+    delete _purchaseBalances[tokenId];
     super._burn(tokenId);
   }
 
@@ -132,10 +138,10 @@ contract Purchase is ERC721Enumerable, Ownable, ReentrancyGuard {
     );
     claimableToken.safeTransfer(
       _ownerOf(tokenId),
-      purchaseBalances[tokenId].tokenAmount
+      _purchaseBalances[tokenId].tokenAmount
     );
 
-    delete purchaseBalances[tokenId];
+    delete _purchaseBalances[tokenId];
     super._burn(tokenId);
   }
 }
