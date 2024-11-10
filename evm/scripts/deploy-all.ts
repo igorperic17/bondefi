@@ -12,6 +12,8 @@ import { deployBancorFormula } from "./deploy-bancor";
 import { deployLaunchpad } from "./deploy-launchpad";
 import { DEPLOYMENT_CONFIRMATIONS } from "./deployments";
 import { asyncVerification, waitForVerifications } from "./verify";
+import { deployPoolManager } from "./deploy-liquidity-manager";
+import { erc20 } from "../typechain-types/@openzeppelin/contracts/token";
 
 const deployTestUSDT = async (
   hre: HardhatRuntimeEnvironment,
@@ -108,6 +110,7 @@ export const deployAll = async (hre: HardhatRuntimeEnvironment) => {
   );
   const erc20Base = await deployBaseERC20(hre, deployer);
   const erc20Factory = await deployERC20Factory(hre, deployer, erc20Base);
+  const uniswapPoolManager = await deployPoolManager(hre, deployer);
 
   const launchpad = await deployLaunchpad(hre, deployer);
   await launchpad.setFactories(erc20Factory, purchaseFactory);

@@ -9,17 +9,38 @@ import {
   ERC20Token__factory,
   IBancorFormula,
   IERC20__factory,
+  INonfungiblePositionManager,
+  ISwapRouter,
+  IUniswapV3Factory,
   Launchpad,
   Launchpad__factory,
+  MockContract__factory,
+  MockUniswapV3LiquidityManager__factory,
   Purchase,
   Purchase__factory,
   PurchaseFactory,
   PurchaseFactory__factory,
   TestToken,
   TestToken__factory,
+  UniswapV3LiquidityManager,
 } from "../../typechain-types";
 import { advanceToFuture, findLogs } from "../fixtures/blockchain-utils";
 import { createLaunchDetails } from "../fixtures/launch-details";
+
+const deployUniswapMocks = async (deployer: SignerWithAddress) => {
+  return {
+    mockContract: await new MockContract__factory(deployer).deploy(),
+    positionManager: (await new MockContract__factory(
+      deployer,
+    ).deploy()) as unknown as INonfungiblePositionManager,
+    swapRouter: (await new MockContract__factory(
+      deployer,
+    ).deploy()) as unknown as ISwapRouter,
+    uniswapV3Factory: (await new MockContract__factory(
+      deployer,
+    ).deploy()) as unknown as IUniswapV3Factory,
+  };
+};
 
 describe("Launchpad", () => {
   const timeToStartSale = 60;
@@ -39,6 +60,8 @@ describe("Launchpad", () => {
   let launchpad: Launchpad;
   let currentBlockTimestamp: number;
 
+  let liquidityManager: UniswapV3LiquidityManager;
+
   let ONE_DAI: bigint;
   let maxPercentageValue: bigint;
 
@@ -46,6 +69,11 @@ describe("Launchpad", () => {
     [deployer, user1, user2] = await ethers.getSigners();
     formula = await new BancorFormula__factory(deployer).deploy();
     maxPercentageValue = await formula.maxRatio();
+
+    liquidityManager = await new MockUniswapV3LiquidityManager__factory(
+      deployer,
+    ).deploy();
+
     purchaseBase = await new Purchase__factory(deployer).deploy();
     purchaseFactory = await new PurchaseFactory__factory(deployer).deploy(
       purchaseBase,
@@ -60,6 +88,7 @@ describe("Launchpad", () => {
     token = await new TestToken__factory(deployer).deploy("Test Token", "TST");
     launchpad = await new Launchpad__factory(deployer).deploy();
     await launchpad.setFactories(erc20Factory, purchaseFactory);
+    await launchpad.setLiquidityPoolManager(liquidityManager);
 
     currentBlockTimestamp =
       (await ethers.provider.getBlock("latest"))?.timestamp ?? 0;
@@ -520,6 +549,30 @@ describe("Launchpad", () => {
       expect(userDetails.purchaseAmount).to.eq(ONE_DAI);
       expect(userDetails.purchaseDecimals).to.eq(await dai.decimals());
       expect(userDetails.purchaseSymbol).to.eq(await dai.symbol());
+    });
+  });
+
+  describe("when doing a TGE launch", () => {
+    it("should deploy a Uniswap pool", async () => {
+      const launch = await createLaunch();
+      await dai.mint(deployer, ONE_DAI);
+      await Promise.all([
+        advanceToFuture(timeToStartSale),
+        dai.approve(launchpad, ONE_DAI),
+      ]);
+      await launchpad.buyTokens(launch.id, ONE_DAI);
+      const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
+      await advanceToFuture(timeAfterSale);
+
+      const tokensToBeEmitted = (await launchpad.getLaunch(launch.id))
+        .tokensToBeEmitted;
+      await token.mint(deployer, tokensToBeEmitted);
+      await token.transfer(launchpad, tokensToBeEmitted);
+
+      const tx = launchpad.tgeEvent(launch.id, 0, ethers.ZeroAddress, token);
+
+      await expect(tx).not.reverted;
+      expect(tx).to.emit(liquidityManager, "CreatePoolAndAddLiquidityCalled");
     });
   });
 });

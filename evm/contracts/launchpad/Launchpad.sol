@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./Purchase.sol";
 import "./PurchaseFactory.sol";
+import "./uniswap/PoolManager.sol";
 import "./token/ERC20Token.sol";
 import "./token/ERC20Factory.sol";
 import "../bancor-formula/IBancorFormula.sol";
@@ -53,8 +54,10 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
 
   uint32 public constant MAX_PERCENT = 1000000;
 
-  PurchaseFactory private _purchaseFactory;
-  ERC20Factory private _erc20Factory;
+  PurchaseFactory public purchaseFactory;
+  ERC20Factory public erc20Factory;
+
+  PoolManager public liquidityPoolManager;
 
   //This mapping MUST NOT be used to calculate the amount of tokens a user can claim, the NFT is the one that represents that
   mapping(uint32 => mapping(address => uint256)) investments; //investments[launchId][user] => amountInvested
@@ -71,19 +74,25 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   constructor() Ownable(msg.sender) {}
 
   function setERC20Factory(address factoryAddress) public onlyOwner {
-    _erc20Factory = ERC20Factory(factoryAddress);
+    erc20Factory = ERC20Factory(factoryAddress);
   }
 
   function setPurchaseFactory(address factoryAddress) public onlyOwner {
-    _purchaseFactory = PurchaseFactory(factoryAddress);
+    purchaseFactory = PurchaseFactory(factoryAddress);
   }
 
   function setFactories(
-    address erc20Factory,
-    address purchaseFactory
+    address _erc20Factory,
+    address _purchaseFactory
   ) external onlyOwner {
-    _erc20Factory = ERC20Factory(erc20Factory);
-    _purchaseFactory = PurchaseFactory(purchaseFactory);
+    erc20Factory = ERC20Factory(_erc20Factory);
+    purchaseFactory = PurchaseFactory(_purchaseFactory);
+  }
+
+  function setLiquidityPoolManager(
+    address _liquidityPoolManager
+  ) external onlyOwner {
+    liquidityPoolManager = PoolManager(_liquidityPoolManager);
   }
 
   function createLaunch(
@@ -100,11 +109,11 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     ProjectDetails calldata details
   ) external /* onlyOwner */ {
     require(
-      address(_purchaseFactory) != address(0),
+      address(purchaseFactory) != address(0),
       "No purchase factory defined"
     );
     require(
-      address(_erc20Factory) != address(0),
+      address(erc20Factory) != address(0),
       "No ERC20 token factory defined"
     );
     require(purchaseFormula != address(0), "No purchase formula defined");
@@ -125,7 +134,7 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     launch.details = details;
 
     if (createERC20) {
-      address projectToken = _erc20Factory.createERC20(
+      address projectToken = erc20Factory.createERC20(
         details.name,
         details.symbol,
         msg.sender, //tokenAdmin
@@ -135,7 +144,7 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
       launch.tokenAddress = projectToken;
     }
 
-    launch.purchaseNftAddress = _purchaseFactory.createPurchaseManager(
+    launch.purchaseNftAddress = purchaseFactory.createPurchaseManager(
       purchaseToken,
       string(abi.encodePacked("IDO ", details.name)),
       string(abi.encodePacked("IDO-", details.symbol)),
@@ -266,6 +275,10 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
       projectAddress != address(0) || tokensForProject == 0,
       "Invalid project address"
     );
+    require(
+      address(liquidityPoolManager) != address(0),
+      "No liquidity pool manager defined"
+    );
     require(block.timestamp > launch.saleEnd, "Sale not ended");
     require(launch.tokensToBeEmitted > 0, "No tokens to be emitted");
 
@@ -312,7 +325,13 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
       purchase.collectFees(msg.sender, collateralForLaunchpad);
     }
 
-    deployLiquidity(launchId, collateralForLiquidity);
+    //TODO mint tokens to provide liquidity
+    deployLiquidity(
+      launch.purchaseToken,
+      tokenAddress,
+      collateralForLiquidity,
+      0
+    );
     setupStaking(launchId);
 
     // Uncomment next few lines if we want to renounce minter role automatically (we won't allow fixing problems at launch with missing token deliveries after TGE)
@@ -349,8 +368,23 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     collateralForLiquidity = raised - collateralForLaunchpad;
   }
 
-  function deployLiquidity(uint32 launchId, uint256 collateral) private {
-    //TODO
+  function deployLiquidity(
+    address purchaseToken,
+    address tokenAddress,
+    uint256 collateral,
+    uint256 tokenAmount
+  ) private {
+    //We can only deploy liquidity on mainnet, so we're checking the UniSwap factory is available
+    //TODO: Remove this check when deploying to mainnet, letting it fail if the factory is not available
+    if (address(liquidityPoolManager.uniswapFactory()) != address(0)) {
+      liquidityPoolManager.createPoolAndAddLiquidity(
+        purchaseToken,
+        tokenAddress,
+        collateral,
+        tokenAmount,
+        3000 //0.3% fee
+      );
+    }
   }
 
   function setupStaking(uint32 launchId) private {

@@ -164,20 +164,24 @@ export interface LaunchpadInterface extends Interface {
       | "claimAll"
       | "claimFees"
       | "createLaunch"
+      | "erc20Factory"
       | "getAllLaunchDetails"
       | "getLaunch"
       | "getLaunchDetails"
       | "getUserStats"
       | "isClaimEnabled"
       | "isRefundEnabled"
+      | "liquidityPoolManager"
       | "owner"
       | "pause"
       | "paused"
+      | "purchaseFactory"
       | "refund"
       | "refundAll"
       | "renounceOwnership"
       | "setERC20Factory"
       | "setFactories"
+      | "setLiquidityPoolManager"
       | "setPurchaseFactory"
       | "tgeEvent"
       | "tgeEventLaunchpadToken"
@@ -235,6 +239,10 @@ export interface LaunchpadInterface extends Interface {
     ]
   ): string;
   encodeFunctionData(
+    functionFragment: "erc20Factory",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getAllLaunchDetails",
     values?: undefined
   ): string;
@@ -258,9 +266,17 @@ export interface LaunchpadInterface extends Interface {
     functionFragment: "isRefundEnabled",
     values: [BigNumberish]
   ): string;
+  encodeFunctionData(
+    functionFragment: "liquidityPoolManager",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "purchaseFactory",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "refund",
     values: [BigNumberish, BigNumberish]
@@ -280,6 +296,10 @@ export interface LaunchpadInterface extends Interface {
   encodeFunctionData(
     functionFragment: "setFactories",
     values: [AddressLike, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setLiquidityPoolManager",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "setPurchaseFactory",
@@ -324,6 +344,10 @@ export interface LaunchpadInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "erc20Factory",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "getAllLaunchDetails",
     data: BytesLike
   ): Result;
@@ -344,9 +368,17 @@ export interface LaunchpadInterface extends Interface {
     functionFragment: "isRefundEnabled",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "liquidityPoolManager",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "purchaseFactory",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "refund", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "refundAll", data: BytesLike): Result;
   decodeFunctionResult(
@@ -359,6 +391,10 @@ export interface LaunchpadInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setFactories",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setLiquidityPoolManager",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -559,6 +595,8 @@ export interface Launchpad extends BaseContract {
     "nonpayable"
   >;
 
+  erc20Factory: TypedContractMethod<[], [string], "view">;
+
   getAllLaunchDetails: TypedContractMethod<
     [],
     [Launchpad.LaunchInfoStructOutput[]],
@@ -595,11 +633,15 @@ export interface Launchpad extends BaseContract {
     "view"
   >;
 
+  liquidityPoolManager: TypedContractMethod<[], [string], "view">;
+
   owner: TypedContractMethod<[], [string], "view">;
 
   pause: TypedContractMethod<[], [void], "nonpayable">;
 
   paused: TypedContractMethod<[], [boolean], "view">;
+
+  purchaseFactory: TypedContractMethod<[], [string], "view">;
 
   refund: TypedContractMethod<
     [launchId: BigNumberish, tokenId: BigNumberish],
@@ -622,7 +664,13 @@ export interface Launchpad extends BaseContract {
   >;
 
   setFactories: TypedContractMethod<
-    [erc20Factory: AddressLike, purchaseFactory: AddressLike],
+    [_erc20Factory: AddressLike, _purchaseFactory: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  setLiquidityPoolManager: TypedContractMethod<
+    [_liquidityPoolManager: AddressLike],
     [void],
     "nonpayable"
   >;
@@ -719,6 +767,9 @@ export interface Launchpad extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "erc20Factory"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "getAllLaunchDetails"
   ): TypedContractMethod<[], [Launchpad.LaunchInfoStructOutput[]], "view">;
   getFunction(
@@ -749,6 +800,9 @@ export interface Launchpad extends BaseContract {
     nameOrSignature: "isRefundEnabled"
   ): TypedContractMethod<[launchId: BigNumberish], [boolean], "view">;
   getFunction(
+    nameOrSignature: "liquidityPoolManager"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
@@ -757,6 +811,9 @@ export interface Launchpad extends BaseContract {
   getFunction(
     nameOrSignature: "paused"
   ): TypedContractMethod<[], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "purchaseFactory"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "refund"
   ): TypedContractMethod<
@@ -776,7 +833,14 @@ export interface Launchpad extends BaseContract {
   getFunction(
     nameOrSignature: "setFactories"
   ): TypedContractMethod<
-    [erc20Factory: AddressLike, purchaseFactory: AddressLike],
+    [_erc20Factory: AddressLike, _purchaseFactory: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "setLiquidityPoolManager"
+  ): TypedContractMethod<
+    [_liquidityPoolManager: AddressLike],
     [void],
     "nonpayable"
   >;

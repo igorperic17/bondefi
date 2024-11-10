@@ -3,4 +3,5 @@
 /* eslint-disable */
 export * as bancorFormula from "./bancor-formula";
 export * as launchpad from "./launchpad";
+export * as lib from "./lib";
 export * as test from "./test";

@@ -5,5 +5,7 @@ import type * as bancorFormula from "./bancor-formula";
 export type { bancorFormula };
 import type * as launchpad from "./launchpad";
 export type { launchpad };
+import type * as lib from "./lib";
+export type { lib };
 import type * as test from "./test";
 export type { test };
