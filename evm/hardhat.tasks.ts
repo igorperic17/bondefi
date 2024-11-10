@@ -28,7 +28,6 @@ task("deploy-launchpad", "Deploys launchpad")
     await deploy(hre, purchaseFactory);
   });
 
-
 task("verify-contract", "Verifies a contract at an address")
   .addPositionalParam("address")
   .addOptionalVariadicPositionalParam("args")

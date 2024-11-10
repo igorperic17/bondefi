@@ -16,6 +16,7 @@ import {
   TestDAI__factory,
 } from "../../typechain-types";
 import { advanceToFuture, findLogs } from "../fixtures/blockchain-utils";
+import { createLaunchDetails } from "../fixtures/launch-details";
 
 describe("Launchpad", () => {
   let deployer: SignerWithAddress;
@@ -71,8 +72,6 @@ describe("Launchpad", () => {
    */
   const createLaunch = async () => {
     await launchpad.createLaunch(
-      "nftName",
-      "purchase",
       dai,
       ethers.parseUnits("1000", await dai.decimals()),
       0,
@@ -80,6 +79,7 @@ describe("Launchpad", () => {
       currentBlockTimestamp + 120,
       formula,
       reserveRatio(0.5),
+      createLaunchDetails(),
     );
 
     return await launchpad.launches(await launchpad.totalLaunches());
@@ -91,8 +91,6 @@ describe("Launchpad", () => {
 
     it("should set up the launch correctly", async () => {
       const tx = launchpad.createLaunch(
-        "nftName",
-        "purchase",
         dai,
         ethers.parseUnits("1000", await dai.decimals()),
         0,
@@ -100,6 +98,7 @@ describe("Launchpad", () => {
         currentBlockTimestamp + timeToFinishSale,
         formula,
         reserveRatio(0.5),
+        createLaunchDetails(),
       );
 
       await expect(tx).not.reverted;

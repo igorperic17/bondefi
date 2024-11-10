@@ -13,10 +13,17 @@ import "./Purchase.sol";
 import "./PurchaseFactory.sol";
 import "../bancor-formula/IBancorFormula.sol";
 
-struct Launch {
-  uint32 id;
+struct ProjectDetails {
+  //required properties
   string name;
   string symbol;
+  //properties that can be moved to a backend
+  string description;
+  string iconUrl;
+}
+
+struct Launch {
+  uint32 id;
   address purchaseToken; //If address == 0 it will be considered a native purchase
   address purchaseNftAddress; //NFT that represents the purchase
   uint256 targetRaise;
@@ -29,6 +36,7 @@ struct Launch {
   address purchaseFormula;
   uint32 reserveRatio; //Percentage, value between 1 and 1000000
   bool claimEnabled;
+  ProjectDetails details; //This should live in a backend instead, and just become calldata in createLaunch
 }
 
 contract Launchpad is Ownable, Pausable, ReentrancyGuard {
@@ -58,15 +66,14 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   }
 
   function createLaunch(
-    string calldata purchaseNftName,
-    string calldata purchaseNftSymbol,
     address purchaseToken,
     uint256 targetRaise,
     uint128 capPerUser,
     uint32 saleStart,
     uint32 saleEnd,
     address purchaseFormula,
-    uint32 reserveRatio
+    uint32 reserveRatio,
+    ProjectDetails calldata details
   ) external /* onlyOwner */ {
     require(
       address(purchaseFactory) != address(0),
@@ -87,13 +94,12 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     launch.saleEnd = saleEnd;
     launch.purchaseFormula = purchaseFormula;
     launch.reserveRatio = reserveRatio;
-    launch.name = purchaseNftName;
-    launch.symbol = purchaseNftSymbol;
+    launch.details = details;
 
     launch.purchaseNftAddress = purchaseFactory.createPurchaseManager(
       purchaseToken,
-      purchaseNftName,
-      purchaseNftSymbol,
+      string(abi.encodePacked("IDO ", details.name)),
+      string(abi.encodePacked("IDO-", details.symbol)),
       "", //TODO: metadataURI
       address(this)
     );
