@@ -17,7 +17,7 @@ struct ProjectDetails {
   //required properties
   string name;
   string symbol;
-  //properties that can be moved to a backend
+  //TODO: properties that should be moved to a backend
   string description;
   string iconUrl;
 }
@@ -36,7 +36,7 @@ struct Launch {
   address purchaseFormula;
   uint32 reserveRatio; //Percentage, value between 1 and 1000000
   bool claimEnabled;
-  ProjectDetails details; //This should live in a backend instead, and just become calldata in createLaunch
+  ProjectDetails details; //TODO: This info should live in a backend instead, and just become calldata in createLaunch
 }
 
 contract Launchpad is Ownable, Pausable, ReentrancyGuard {
@@ -275,26 +275,6 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     return Purchase(launch.purchaseNftAddress);
   }
 
-  function getUserStats(
-    address user,
-    uint32 launchId
-  )
-    external
-    view
-    returns (uint256 nftBalance, uint256 purchaseAmount, uint256 tokenAmount)
-  {
-    Purchase purchase = getPurchaseFromLaunch(launchId);
-    nftBalance = purchase.balanceOf(user);
-
-    for (uint32 i = 0; i < nftBalance; i++) {
-      (uint256 collateralAmountBalance, uint256 tokenAmountBalance) = purchase
-        .purchaseBalances(purchase.tokenOfOwnerByIndex(msg.sender, i));
-
-      tokenAmount += tokenAmountBalance;
-      purchaseAmount += collateralAmountBalance;
-    }
-  }
-
   function getLaunch(uint32 launchId) external view returns (Launch memory) {
     return launches[launchId];
   }
@@ -311,4 +291,62 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   }
 
   receive() external payable {}
+
+  //WARNING!
+  //TODO: remove these functions when a backend is implemented
+  //They are not built to scale and should not be used in a production environment
+  struct LaunchInfo {
+    Launch launch;
+    uint8 tokenPurchaseDecimals;
+  }
+
+  struct UserStats {
+    uint256 nftBalance;
+    uint256 purchaseAmount;
+    string purchaseSymbol;
+    uint256 purchaseDecimals;
+    uint256 tokenAmount;
+    uint256 tokenDecimals;
+  }
+
+  function getLaunchDetails(
+    uint32 launchId
+  ) public view returns (LaunchInfo memory launchDetails) {
+    launchDetails.launch = launches[launchId];
+    launchDetails.tokenPurchaseDecimals = IERC20Metadata(
+      launchDetails.launch.purchaseToken
+    ).decimals();
+  }
+
+  function getAllLaunchDetails() external view returns (LaunchInfo[] memory) {
+    LaunchInfo[] memory _launches = new LaunchInfo[](totalLaunches);
+    for (uint32 i = 0; i < totalLaunches; i++) {
+      _launches[i] = getLaunchDetails(i + 1);
+    }
+    return _launches;
+  }
+
+  function getUserStats(
+    address user,
+    uint32 launchId
+  ) external view returns (UserStats memory userStats) {
+    Purchase purchase = getPurchaseFromLaunch(launchId);
+    userStats.nftBalance = purchase.balanceOf(user);
+
+    for (uint32 i = 0; i < userStats.nftBalance; i++) {
+      (uint256 collateralAmountBalance, uint256 tokenAmountBalance) = purchase
+        .purchaseBalances(purchase.tokenOfOwnerByIndex(msg.sender, i));
+
+      userStats.tokenAmount += tokenAmountBalance;
+      userStats.purchaseAmount += collateralAmountBalance;
+    }
+
+    userStats.purchaseSymbol = IERC20Metadata(launches[launchId].purchaseToken)
+      .symbol();
+    userStats.purchaseDecimals = IERC20Metadata(
+      launches[launchId].purchaseToken
+    ).decimals();
+    userStats.tokenDecimals = 18; //userStats.tokenDecimals = IERC20Metadata(purchase.claimableToken()).decimals();
+  }
+  //END TODO: remove these functions when a backend is implemented
 }

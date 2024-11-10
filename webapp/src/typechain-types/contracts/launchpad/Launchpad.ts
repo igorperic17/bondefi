@@ -86,6 +86,43 @@ export type LaunchStructOutput = [
   details: ProjectDetailsStructOutput;
 };
 
+export declare namespace Launchpad {
+  export type LaunchInfoStruct = {
+    launch: LaunchStruct;
+    tokenPurchaseDecimals: BigNumberish;
+  };
+
+  export type LaunchInfoStructOutput = [
+    launch: LaunchStructOutput,
+    tokenPurchaseDecimals: bigint
+  ] & { launch: LaunchStructOutput; tokenPurchaseDecimals: bigint };
+
+  export type UserStatsStruct = {
+    nftBalance: BigNumberish;
+    purchaseAmount: BigNumberish;
+    purchaseSymbol: string;
+    purchaseDecimals: BigNumberish;
+    tokenAmount: BigNumberish;
+    tokenDecimals: BigNumberish;
+  };
+
+  export type UserStatsStructOutput = [
+    nftBalance: bigint,
+    purchaseAmount: bigint,
+    purchaseSymbol: string,
+    purchaseDecimals: bigint,
+    tokenAmount: bigint,
+    tokenDecimals: bigint
+  ] & {
+    nftBalance: bigint;
+    purchaseAmount: bigint;
+    purchaseSymbol: string;
+    purchaseDecimals: bigint;
+    tokenAmount: bigint;
+    tokenDecimals: bigint;
+  };
+}
+
 export interface LaunchpadInterface extends Interface {
   getFunction(
     nameOrSignature:
@@ -93,7 +130,9 @@ export interface LaunchpadInterface extends Interface {
       | "claim"
       | "claimFees"
       | "createLaunch"
+      | "getAllLaunchDetails"
       | "getLaunch"
+      | "getLaunchDetails"
       | "getUserStats"
       | "isClaimEnabled"
       | "isRefundEnabled"
@@ -144,7 +183,15 @@ export interface LaunchpadInterface extends Interface {
     ]
   ): string;
   encodeFunctionData(
+    functionFragment: "getAllLaunchDetails",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "getLaunch",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getLaunchDetails",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
@@ -203,7 +250,15 @@ export interface LaunchpadInterface extends Interface {
     functionFragment: "createLaunch",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "getAllLaunchDetails",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "getLaunch", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "getLaunchDetails",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "getUserStats",
     data: BytesLike
@@ -407,21 +462,27 @@ export interface Launchpad extends BaseContract {
     "nonpayable"
   >;
 
+  getAllLaunchDetails: TypedContractMethod<
+    [],
+    [Launchpad.LaunchInfoStructOutput[]],
+    "view"
+  >;
+
   getLaunch: TypedContractMethod<
     [launchId: BigNumberish],
     [LaunchStructOutput],
     "view"
   >;
 
+  getLaunchDetails: TypedContractMethod<
+    [launchId: BigNumberish],
+    [Launchpad.LaunchInfoStructOutput],
+    "view"
+  >;
+
   getUserStats: TypedContractMethod<
     [user: AddressLike, launchId: BigNumberish],
-    [
-      [bigint, bigint, bigint] & {
-        nftBalance: bigint;
-        purchaseAmount: bigint;
-        tokenAmount: bigint;
-      }
-    ],
+    [Launchpad.UserStatsStructOutput],
     "view"
   >;
 
@@ -511,6 +572,9 @@ export interface Launchpad extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "getAllLaunchDetails"
+  ): TypedContractMethod<[], [Launchpad.LaunchInfoStructOutput[]], "view">;
+  getFunction(
     nameOrSignature: "getLaunch"
   ): TypedContractMethod<
     [launchId: BigNumberish],
@@ -518,16 +582,17 @@ export interface Launchpad extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "getLaunchDetails"
+  ): TypedContractMethod<
+    [launchId: BigNumberish],
+    [Launchpad.LaunchInfoStructOutput],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "getUserStats"
   ): TypedContractMethod<
     [user: AddressLike, launchId: BigNumberish],
-    [
-      [bigint, bigint, bigint] & {
-        nftBalance: bigint;
-        purchaseAmount: bigint;
-        tokenAmount: bigint;
-      }
-    ],
+    [Launchpad.UserStatsStructOutput],
     "view"
   >;
   getFunction(
