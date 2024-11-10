@@ -70,8 +70,9 @@ export default function TokenPage() {
             }
         }
         return null
-    }, [id])
+    }, [id, launchpad])
 
+    // not needed for evm, funding is tracked on the launchpad contract
     const fetchCurrentFunding = useCallback(
         async (tokenDetails: TokenDetails | null) => {
             if (!tokenDetails) return
@@ -276,8 +277,8 @@ export default function TokenPage() {
             });
 
             // Refresh the NFTs
-            await fetchNFTs(token);
-            await fetchUserTokenSupply(token);
+            // await fetchNFTs(token);
+            // await fetchUserTokenSupply(token);
         } catch (error) {
             console.error('Error claiming NFT:', error);
             toast({
