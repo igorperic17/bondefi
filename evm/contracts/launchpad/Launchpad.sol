@@ -15,6 +15,8 @@ import "../bancor-formula/IBancorFormula.sol";
 
 struct Launch {
   uint32 id;
+  string name;
+  string symbol;
   address purchaseToken; //If address == 0 it will be considered a native purchase
   address purchaseNftAddress; //NFT that represents the purchase
   uint256 targetRaise;
@@ -85,6 +87,8 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     launch.saleEnd = saleEnd;
     launch.purchaseFormula = purchaseFormula;
     launch.reserveRatio = reserveRatio;
+    launch.name = purchaseNftName;
+    launch.symbol = purchaseNftSymbol;
 
     launch.purchaseNftAddress = purchaseFactory.createPurchaseManager(
       purchaseToken,

@@ -24,7 +24,7 @@ task("deploy-bancor", "Deploys bancor formula").setAction(async (_, hre) => {
 task("deploy-launchpad", "Deploys launchpad")
   .addOptionalVariadicPositionalParam("args")
   .setAction(async ({ purchaseFactory }, hre) => {
-    const { deploy } = require("./scripts/deploy-bancor");
+    const { deploy } = require("./scripts/deploy-launchpad");
     await deploy(hre, purchaseFactory);
   });
 

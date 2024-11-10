@@ -69,8 +69,8 @@ export default function LaunchToken() {
       ]);
       
       const tx = launchpad.createLaunch(
-        `IDO ${params.name}`,
-        `IDO-${params.symbol}`,
+        params.name,
+        params.symbol,
         params.purchaseToken,
         ethers.parseUnits(
           params.targetRaise,

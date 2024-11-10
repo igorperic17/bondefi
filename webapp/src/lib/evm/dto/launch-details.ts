@@ -20,6 +20,7 @@ export interface TokenDetails {
   factoryComponentId: string;
   dateCreated: Date;
   fundraisingTarget: number;
+  raised: number;
   collateralAddress: string;
 
   presaleTokenId: string;
@@ -32,15 +33,16 @@ export interface TokenDetails {
 export const extractEVMTokenDetails = (launchProxy: any) => {
   return {
     id: launchProxy.id.toString(),
-    name: "N/A", // Assuming name is not available in the current token structure
-    symbol: "N/A", // Assuming symbol is not available in the current token structure
-    description: "N/A", // Assuming description is not available in the current token structure
+    name: launchProxy.name, // Assuming name is not available in the current token structure
+    symbol: launchProxy.symbol, // Assuming symbol is not available in the current token structure
+    description: launchProxy.description ? launchProxy.description : "No description available", // Assuming description is not available in the current token structure
     iconUrl: "", // Assuming iconUrl is not available in the current token structure
     infoUrl: `/project/${launchProxy.id.toString()}`,
     bondingCurve: [], // Assuming bondingCurve is not available in the current token structure
     factoryComponentId: "N/A", // Assuming factoryComponentId is not available in the current token structure
     dateCreated: new Date(Number(launchProxy.saleStart) * 1000),
     fundraisingTarget: Number(launchProxy.targetRaise),
+    raised: Number(launchProxy.raised),
     collateralAddress: launchProxy.purchaseToken, // Using purchaseToken as collateralAddress
     presaleTokenId: launchProxy.purchaseNftAddress, // Using purchaseNftAddress as presaleTokenId
     presaleStart: new Date(Number(launchProxy.saleStart) * 1000),
