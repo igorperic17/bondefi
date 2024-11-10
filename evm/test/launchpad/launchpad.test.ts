@@ -82,7 +82,7 @@ describe("Launchpad", () => {
       createLaunchDetails(),
     );
 
-    return await launchpad.launches(await launchpad.totalLaunches());
+    return await launchpad.getLaunch(await launchpad.totalLaunches());
   };
 
   describe("when setting up a project launch", () => {
@@ -256,7 +256,7 @@ describe("Launchpad", () => {
       const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
       await advanceToFuture(timeAfterSale);
 
-      const tokensToBeEmitted = (await launchpad.launches(launch.id))
+      const tokensToBeEmitted = (await launchpad.getLaunch(launch.id))
         .tokensToBeEmitted;
       await token.mint(deployer, tokensToBeEmitted);
       await token.transfer(launchpad, tokensToBeEmitted);
@@ -277,7 +277,7 @@ describe("Launchpad", () => {
       const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
       await advanceToFuture(timeAfterSale);
 
-      const tokensToBeEmitted = (await launchpad.launches(launch.id))
+      const tokensToBeEmitted = (await launchpad.getLaunch(launch.id))
         .tokensToBeEmitted;
       await token.mint(deployer, tokensToBeEmitted);
       await token.transfer(launchpad, tokensToBeEmitted);

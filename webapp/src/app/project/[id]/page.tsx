@@ -57,7 +57,7 @@ export default function TokenPage() {
         console.log('fetching token details', id)
         if (id) {
             try {
-                const result = await launchpad?.launches(Number(id))
+                const result = await launchpad?.getLaunch(Number(id))
                 if (result) {
                     console.log('SETTING TOKEN', result)
                     const tokenDetails = extractEVMTokenDetails(result)
@@ -77,7 +77,7 @@ export default function TokenPage() {
         async (tokenDetails: TokenDetails | null) => {
             if (!tokenDetails) return
             try {
-                const result = await radix.gateway.state.getEntityDetailsVaultAggregated(tokenDetails.factoryComponentId)
+                const result = await radix.gateway.state.getEntityDetailsVaultAggregated("")
                 console.log("FUNGIBLE: ", result)
                 const amount = get(result, 'fungible_resources.items[1].vaults.items[0].amount', '0')
                 setCurrentFunding(Number(amount))
@@ -180,34 +180,35 @@ export default function TokenPage() {
     const isFundingReached = token?.presaleSuccess
     const isNotFunded = token && !token.presaleSuccess && new Date() > new Date(token.presaleEnd)
 
-    const curve = useMemo(() => {
-        return BONDING_CURVES[2]
-    }, [token])
+    // const curve = useMemo(() => {
+    //     return BONDING_CURVES[2]
+    // }, [token])
 
-    const params = useMemo(() => {
-        if (token && token.bondingCurve.length > 1) {
-            return token.bondingCurve.slice(1).map(Number)
-        }
-        return [1]
-    }, [token])
+    // const params = useMemo(() => {
+    //     if (token && token.bondingCurve.length > 1) {
+    //         return token.bondingCurve.slice(1).map(Number)
+    //     }
+    //     return [1]
+    // }, [token])
 
-    const calculateTokenAmount = (investment: number) => {
-        console.log(investment);
-        const tokenAmount = BONDING_CURVES[0].compute(investment,
-            currentFunding,
-            [parseFloat(token!.bondingCurve[1])]
-        )
-        console.log(tokenAmount)
-        return tokenAmount
-    }
+    // const calculateTokenAmount = (investment: number) => {
+    //     console.log(investment);
+    //     const tokenAmount = BONDING_CURVES[0].compute(investment,
+    //         currentFunding,
+    //         [parseFloat(token!.bondingCurve[1])]
+    //     )
+    //     console.log(tokenAmount)
+    //     return tokenAmount
+    // }
 
     const handleInvestmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value
         setInvestmentAmount(value)
         const investment = parseFloat(value)
         if (!isNaN(investment)) {
-            const tokens = calculateTokenAmount(investment)
-            setTokenAmount(tokens[0])
+            // const tokens = calculateTokenAmount(investment)
+            // setTokenAmount(tokens[0])
+            setTokenAmount(0) //TOOD: implement calculateTokenAmount
         } else {
             setTokenAmount(0)
         }
@@ -221,7 +222,7 @@ export default function TokenPage() {
 
             let manifest = undefined
             if (dialogAction === ActionType.Buy) {
-                manifest = presaleNFTMintManifest(token.factoryComponentId, {
+                manifest = presaleNFTMintManifest("", {
                     accountId,
                     collateralAddress: token.collateralAddress,
                     amount: investmentAmount,
@@ -256,7 +257,7 @@ export default function TokenPage() {
         try {
             const accountId = await radix.getCurrentAccount();
             const manifest = claimManifest(
-                token.factoryComponentId,
+                "",
                 {
                     accountId,
                     nftTokenAddress: token.presaleTokenId,
@@ -367,11 +368,6 @@ export default function TokenPage() {
                                         <InfoIcon className="w-4 h-4 mr-2" />
                                         {token.description}
                                     </p>
-                                    <p className="text-sm text-gray-400 mb-1 flex items-center">
-                                        <ChartLineIcon className="w-4 h-4 mr-2" />
-                                        Bonding Curve:{' '}
-                                        {token.bondingCurve.join(', ') || 'Not specified'}
-                                    </p>
                                     <div className="mb-2">
                                         <p className="text-sm text-gray-400 mb-1 flex items-center">
                                             <DollarSignIcon className="w-4 h-4 mr-2" />
@@ -383,7 +379,7 @@ export default function TokenPage() {
                                             className="w-full h-2"
                                         />
                                     </div>
-                                    <p className="text-sm text-gray-400 mb-4 flex items-center">
+                                    {/* <p className="text-sm text-gray-400 mb-4 flex items-center">
                                         <InfoIcon className="w-4 h-4 mr-2" />
                                         Factory Component:{' '}
                                         <a
@@ -394,7 +390,7 @@ export default function TokenPage() {
                                         >
                                             {token.factoryComponentId}
                                         </a>
-                                    </p>
+                                    </p> */}
                                     {token.presaleStart && token.presaleEnd && (
                                         <div className="w-full mb-4">
                                             <p className="text-sm text-gray-400 mb-1">

@@ -29,14 +29,16 @@ export default function LaunchToken() {
   const router = useRouter();
 
   const [params, setParams] = useState<CreateTokenProps>({
-    name: "",
-    symbol: "",
     targetRaise: "10000",
     purchaseToken: RESERVE_TOKENS[0]?.address,
     purchaseFormula: BONDING_CURVES[0]?.address,
     reserveRatio: 0.5,
     saleStart: new Date(),
     saleEnd: add(new Date(), { days: 3 }),
+    name: "",
+    symbol: "",
+    description: "",
+    iconUrl: "",
   });
 
   const [collateralToken] = useERC20(
@@ -53,24 +55,7 @@ export default function LaunchToken() {
       console.error("Fatal error: launchpad is not available");
       setLoading(false);
     } else {
-      console.log("Calling launchpad with params", [
-        `IDO ${params.name}`,
-        `IDO-${params.symbol}`,
-        params.purchaseToken,
-        ethers.parseUnits(
-          params.targetRaise,
-          await collateralToken?.decimals(),
-        ),
-        userCap,
-        dateToUnixTimestamp(params.saleStart),
-        dateToUnixTimestamp(params.saleEnd),
-        params.purchaseFormula,
-        params.reserveRatio * BANCOR_RESERVE_RATIO_PRECISION,
-      ]);
-      
       const tx = launchpad.createLaunch(
-        params.name,
-        params.symbol,
         params.purchaseToken,
         ethers.parseUnits(
           params.targetRaise,
@@ -80,7 +65,13 @@ export default function LaunchToken() {
         dateToUnixTimestamp(params.saleStart),
         dateToUnixTimestamp(params.saleEnd),
         params.purchaseFormula,
-        params.reserveRatio * BANCOR_RESERVE_RATIO_PRECISION,
+        Math.floor(params.reserveRatio * BANCOR_RESERVE_RATIO_PRECISION),
+        {
+          name: params.name,
+          symbol: params.symbol,
+          description: params.description,
+          iconUrl: params.iconUrl,
+        },
       );
 
       tx.then(async (_) => {

@@ -23,6 +23,69 @@ import type {
   TypedContractMethod,
 } from "../../common";
 
+export type ProjectDetailsStruct = {
+  name: string;
+  symbol: string;
+  description: string;
+  iconUrl: string;
+};
+
+export type ProjectDetailsStructOutput = [
+  name: string,
+  symbol: string,
+  description: string,
+  iconUrl: string
+] & { name: string; symbol: string; description: string; iconUrl: string };
+
+export type LaunchStruct = {
+  id: BigNumberish;
+  purchaseToken: AddressLike;
+  purchaseNftAddress: AddressLike;
+  targetRaise: BigNumberish;
+  raised: BigNumberish;
+  tokensToBeEmitted: BigNumberish;
+  capPerUser: BigNumberish;
+  saleStart: BigNumberish;
+  saleEnd: BigNumberish;
+  totalUsers: BigNumberish;
+  purchaseFormula: AddressLike;
+  reserveRatio: BigNumberish;
+  claimEnabled: boolean;
+  details: ProjectDetailsStruct;
+};
+
+export type LaunchStructOutput = [
+  id: bigint,
+  purchaseToken: string,
+  purchaseNftAddress: string,
+  targetRaise: bigint,
+  raised: bigint,
+  tokensToBeEmitted: bigint,
+  capPerUser: bigint,
+  saleStart: bigint,
+  saleEnd: bigint,
+  totalUsers: bigint,
+  purchaseFormula: string,
+  reserveRatio: bigint,
+  claimEnabled: boolean,
+  details: ProjectDetailsStructOutput
+] & {
+  id: bigint;
+  purchaseToken: string;
+  purchaseNftAddress: string;
+  targetRaise: bigint;
+  raised: bigint;
+  tokensToBeEmitted: bigint;
+  capPerUser: bigint;
+  saleStart: bigint;
+  saleEnd: bigint;
+  totalUsers: bigint;
+  purchaseFormula: string;
+  reserveRatio: bigint;
+  claimEnabled: boolean;
+  details: ProjectDetailsStructOutput;
+};
+
 export interface LaunchpadInterface extends Interface {
   getFunction(
     nameOrSignature:
@@ -30,10 +93,10 @@ export interface LaunchpadInterface extends Interface {
       | "claim"
       | "claimFees"
       | "createLaunch"
+      | "getLaunch"
       | "getUserStats"
       | "isClaimEnabled"
       | "isRefundEnabled"
-      | "launches"
       | "owner"
       | "pause"
       | "paused"
@@ -70,16 +133,19 @@ export interface LaunchpadInterface extends Interface {
   encodeFunctionData(
     functionFragment: "createLaunch",
     values: [
-      string,
-      string,
       AddressLike,
       BigNumberish,
       BigNumberish,
       BigNumberish,
       BigNumberish,
       AddressLike,
-      BigNumberish
+      BigNumberish,
+      ProjectDetailsStruct
     ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getLaunch",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "getUserStats",
@@ -91,10 +157,6 @@ export interface LaunchpadInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "isRefundEnabled",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "launches",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
@@ -141,6 +203,7 @@ export interface LaunchpadInterface extends Interface {
     functionFragment: "createLaunch",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "getLaunch", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getUserStats",
     data: BytesLike
@@ -153,7 +216,6 @@ export interface LaunchpadInterface extends Interface {
     functionFragment: "isRefundEnabled",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "launches", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
@@ -332,18 +394,23 @@ export interface Launchpad extends BaseContract {
 
   createLaunch: TypedContractMethod<
     [
-      purchaseNftName: string,
-      purchaseNftSymbol: string,
       purchaseToken: AddressLike,
       targetRaise: BigNumberish,
       capPerUser: BigNumberish,
       saleStart: BigNumberish,
       saleEnd: BigNumberish,
       purchaseFormula: AddressLike,
-      reserveRatio: BigNumberish
+      reserveRatio: BigNumberish,
+      details: ProjectDetailsStruct
     ],
     [void],
     "nonpayable"
+  >;
+
+  getLaunch: TypedContractMethod<
+    [launchId: BigNumberish],
+    [LaunchStructOutput],
+    "view"
   >;
 
   getUserStats: TypedContractMethod<
@@ -367,42 +434,6 @@ export interface Launchpad extends BaseContract {
   isRefundEnabled: TypedContractMethod<
     [launchId: BigNumberish],
     [boolean],
-    "view"
-  >;
-
-  launches: TypedContractMethod<
-    [arg0: BigNumberish],
-    [
-      [
-        bigint,
-        string,
-        string,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        string,
-        bigint,
-        boolean
-      ] & {
-        id: bigint;
-        purchaseToken: string;
-        purchaseNftAddress: string;
-        targetRaise: bigint;
-        raised: bigint;
-        tokensToBeEmitted: bigint;
-        capPerUser: bigint;
-        saleStart: bigint;
-        saleEnd: bigint;
-        totalUsers: bigint;
-        purchaseFormula: string;
-        reserveRatio: bigint;
-        claimEnabled: boolean;
-      }
-    ],
     "view"
   >;
 
@@ -467,18 +498,24 @@ export interface Launchpad extends BaseContract {
     nameOrSignature: "createLaunch"
   ): TypedContractMethod<
     [
-      purchaseNftName: string,
-      purchaseNftSymbol: string,
       purchaseToken: AddressLike,
       targetRaise: BigNumberish,
       capPerUser: BigNumberish,
       saleStart: BigNumberish,
       saleEnd: BigNumberish,
       purchaseFormula: AddressLike,
-      reserveRatio: BigNumberish
+      reserveRatio: BigNumberish,
+      details: ProjectDetailsStruct
     ],
     [void],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "getLaunch"
+  ): TypedContractMethod<
+    [launchId: BigNumberish],
+    [LaunchStructOutput],
+    "view"
   >;
   getFunction(
     nameOrSignature: "getUserStats"
@@ -499,43 +536,6 @@ export interface Launchpad extends BaseContract {
   getFunction(
     nameOrSignature: "isRefundEnabled"
   ): TypedContractMethod<[launchId: BigNumberish], [boolean], "view">;
-  getFunction(
-    nameOrSignature: "launches"
-  ): TypedContractMethod<
-    [arg0: BigNumberish],
-    [
-      [
-        bigint,
-        string,
-        string,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        bigint,
-        string,
-        bigint,
-        boolean
-      ] & {
-        id: bigint;
-        purchaseToken: string;
-        purchaseNftAddress: string;
-        targetRaise: bigint;
-        raised: bigint;
-        tokensToBeEmitted: bigint;
-        capPerUser: bigint;
-        saleStart: bigint;
-        saleEnd: bigint;
-        totalUsers: bigint;
-        purchaseFormula: string;
-        reserveRatio: bigint;
-        claimEnabled: boolean;
-      }
-    ],
-    "view"
-  >;
   getFunction(
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;

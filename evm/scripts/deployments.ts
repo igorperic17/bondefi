@@ -1,2 +1,2 @@
-export const DEPLOYMENT_CONFIRMATIONS = 5;
-export const VERIFICATION_WAIT_TIME = 30000; //30s
+export const DEPLOYMENT_CONFIRMATIONS = 1;
+export const VERIFICATION_WAIT_TIME = 15000; //15 seconds

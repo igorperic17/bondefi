@@ -30,7 +30,7 @@ const TokenList: React.FC = () => {
       const totalLaunches = await launchpad.totalLaunches();
       const launches: TokenDetails[] = [];
       for (let i = 0; i < totalLaunches; i++) {
-        const launchProxy = await launchpad.launches(i);
+        const launchProxy = await launchpad.getLaunch(i);
         const launch: TokenDetails = extractEVMTokenDetails(launchProxy);
         launches.push(launch);
       }
@@ -72,8 +72,6 @@ const TokenList: React.FC = () => {
             description={token.description}
             iconUrl={token.iconUrl}
             infoUrl={token.infoUrl}
-            bondingCurve={token.bondingCurve}
-            factoryComponentId={token.factoryComponentId}
             dateCreated={token.dateCreated}
             fundraisingTarget={token.fundraisingTarget}
             collateralAddress={token.collateralAddress}

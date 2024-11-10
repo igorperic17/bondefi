@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import type { CreateTokenProps } from "@/lib/evm/dto/create-token";
 import {
   RESERVE_TOKENS,
@@ -86,6 +87,25 @@ export function TokenForm({ params, onSet }: TokenFormProps) {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="mb-4 w-full space-y-2">
+        <Label>Description</Label>
+        <Textarea
+          value={params.description}
+          placeholder="Provide a short description of your project"
+          onChange={(e) => set({ description: e.target.value })}
+        />
+      </div>
+
+      <div className="mb-4 w-full space-y-2">
+        <Label>Icon URL</Label>
+        <Input
+          type="text"
+          value={params.iconUrl}
+          placeholder="https://example.com/icon.png"
+          onChange={(e) => set({ iconUrl: e.target.value })}
+        />
       </div>
 
       <div className="mb-4 w-full space-y-2">

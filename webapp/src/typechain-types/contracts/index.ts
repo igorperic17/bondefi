@@ -5,8 +5,6 @@ import type * as bancorFormula from "./bancor-formula";
 export type { bancorFormula };
 import type * as launchpad from "./launchpad";
 export type { launchpad };
-import type * as marketMaker from "./market-maker";
-export type { marketMaker };
 import type * as test from "./test";
 export type { test };
 export type { ERC20Token } from "./ERC20Token";

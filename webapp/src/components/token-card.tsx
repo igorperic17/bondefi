@@ -1,8 +1,8 @@
-import React from 'react';
-import Image from 'next/image';
-import { MagicCard } from '@/components/magicui/magic-card';
 import { BorderBeam } from "@/components/magicui/border-beam";
-import { TrendingUpIcon, DollarSignIcon, CalendarIcon, StarIcon, ImageIcon, InfoIcon } from 'lucide-react';
+import { MagicCard } from '@/components/magicui/magic-card';
+import { CalendarIcon, DollarSignIcon, ImageIcon, InfoIcon, StarIcon, TrendingUpIcon } from 'lucide-react';
+import Image from 'next/image';
+import React from 'react';
 
 interface TokenCardProps {
     id: string;
@@ -11,8 +11,6 @@ interface TokenCardProps {
     description: string;
     iconUrl: string;
     infoUrl: string;
-    bondingCurve: string[];
-    factoryComponentId: string;
     dateCreated: Date;
     fundraisingTarget: number;
     collateralAddress: string;
@@ -32,8 +30,6 @@ const TokenCard: React.FC<TokenCardProps> = ({
     description,
     iconUrl,
     infoUrl,
-    bondingCurve,
-    factoryComponentId,
     dateCreated,
     fundraisingTarget,
     collateralAddress,

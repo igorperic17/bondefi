@@ -42,7 +42,7 @@ struct Launch {
 contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   using SafeERC20 for IERC20;
 
-  mapping(uint32 => Launch) public launches;
+  mapping(uint32 => Launch) private launches;
   uint32 public totalLaunches;
 
   PurchaseFactory private purchaseFactory;
@@ -293,6 +293,10 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
       tokenAmount += tokenAmountBalance;
       purchaseAmount += collateralAmountBalance;
     }
+  }
+
+  function getLaunch(uint32 launchId) external view returns (Launch memory) {
+    return launches[launchId];
   }
 
   function withdrawETH() external onlyOwner {

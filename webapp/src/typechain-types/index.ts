@@ -72,7 +72,5 @@ export type { Purchase } from "./contracts/launchpad/Purchase";
 export { Purchase__factory } from "./factories/contracts/launchpad/Purchase__factory";
 export type { PurchaseFactory } from "./contracts/launchpad/PurchaseFactory";
 export { PurchaseFactory__factory } from "./factories/contracts/launchpad/PurchaseFactory__factory";
-export type { BatchedMarketMaker } from "./contracts/market-maker/BatchedMarketMaker";
-export { BatchedMarketMaker__factory } from "./factories/contracts/market-maker/BatchedMarketMaker__factory";
 export type { TestDAI } from "./contracts/test/TestDAI";
 export { TestDAI__factory } from "./factories/contracts/test/TestDAI__factory";
