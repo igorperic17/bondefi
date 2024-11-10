@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BONDING_CURVES } from '@/lib/bonding-curve';
+import { Loader } from 'lucide-react';
 
 export enum ActionType {
     Buy = 'buy',
@@ -19,7 +20,7 @@ interface InvestmentDialogProps {
     amount: string;
     resultAmount: number;
     onAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onConfirm: () => void;
+    onConfirm: () => Promise<void>;
     actionType: ActionType;
     maxAmount?: number;
 }
@@ -36,6 +37,8 @@ export const InvestmentDialog: React.FC<InvestmentDialogProps> = ({
     actionType,
     maxAmount
 }) => {
+    const [isConfirming, setIsConfirming] = useState(false);
+
     const getDialogTitle = () => {
         switch (actionType) {
             case ActionType.Buy: return `Invest in ${tokenName}`;
@@ -76,6 +79,15 @@ export const InvestmentDialog: React.FC<InvestmentDialogProps> = ({
         }
     };
 
+    const handleConfirm = async () => {
+        setIsConfirming(true);
+        try {
+            await onConfirm();
+        } finally {
+            setIsConfirming(false);
+        }
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
@@ -104,7 +116,20 @@ export const InvestmentDialog: React.FC<InvestmentDialogProps> = ({
                     </div> */}
                 </div>
                 <DialogFooter>
-                    <Button type="submit" onClick={onConfirm}>{getConfirmButtonText()}</Button>
+                    <Button 
+                        type="submit" 
+                        onClick={handleConfirm} 
+                        disabled={isConfirming}
+                    >
+                        {isConfirming ? (
+                            <>
+                                <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                Creating transaction...
+                            </>
+                        ) : (
+                            getConfirmButtonText()
+                        )}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

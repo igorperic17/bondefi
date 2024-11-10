@@ -27,6 +27,9 @@ import { ActionType, InvestmentDialog } from './investment-dialog'
 import useEvmLaunchpad from '@/lib/evm/use-evm-launchpad'
 import { useWallets } from '@particle-network/connectkit'
 import { extractEVMTokenDetails, TokenDetails } from '@/lib/evm/dto/launch-details'
+import useERC20 from '@/lib/evm/use-erc20'
+import { ethers } from 'ethers'
+import { Launchpad } from '@/typechain-types/contracts/launchpad/Launchpad'
 
 type ExtractedNFT = {
     resourceAddress: string;
@@ -51,6 +54,58 @@ export default function TokenPage() {
 
     const [primaryWallet] = useWallets(); 
     const { launchpad } = useEvmLaunchpad(primaryWallet?.connector);
+    const [collateralToken] = useERC20(primaryWallet?.connector, token?.collateralAddress ?? '');
+    const [collateralTokenSymbol, setCollateralTokenSymbol] = useState<string | null>(null);
+    const [userStats, setUserStats] = useState<Launchpad.UserStatsStructOutput | null>(null);
+
+    // Fetch user investment stats from the launchpad contract
+    const fetchUserStats = useCallback(async () => {
+        if (!primaryWallet?.connector || !id || !launchpad) return;
+        
+        try {
+            const address = await primaryWallet.getWalletClient().account!.address;
+            if (!address) return;
+
+            const stats = await launchpad.getUserStats(address, BigInt(id as string));
+            console.log('stats', stats)
+            setUserStats(stats);
+        } catch (error) {
+            console.error('Error fetching user stats:', error);
+        }
+    }, [primaryWallet?.connector, id, launchpad]);
+
+    useEffect(() => {
+        fetchUserStats();
+    }, [fetchUserStats]);
+
+    useEffect(() => {
+        console.log('userStats', userStats)
+
+        if (userStats) {
+            setTokens(Number(userStats.tokenAmount))
+            setNfts(Array(Number(userStats.nftBalance)).fill({
+                resourceAddress: "dummy-address",
+                tokenId: "dummy-id", 
+                vaultAddress: "dummy-vault"
+            }) as [ExtractedNFT])
+        }
+    }, [userStats])
+
+
+    // store collateral symbol once token is loded
+    useEffect(() => {
+        const fetchCollateralSymbol = async () => {
+            if (collateralToken) {
+                try {
+                    const symbol = await collateralToken.symbol();
+                    setCollateralTokenSymbol(symbol);
+                } catch (error) {
+                    console.error('Error fetching collateral token symbol:', error);
+                }
+            }
+        };
+        fetchCollateralSymbol();
+    }, [collateralToken]);
 
     const fetchTokenDetails = useCallback(async () => {
         console.log('fetching token details', id)
@@ -72,20 +127,20 @@ export default function TokenPage() {
     }, [id, launchpad])
 
     // not needed for evm, funding is tracked on the launchpad contract
-    const fetchCurrentFunding = useCallback(
-        async (tokenDetails: TokenDetails | null) => {
-            if (!tokenDetails) return
-            try {
-                const result = await radix.gateway.state.getEntityDetailsVaultAggregated("")
-                console.log("FUNGIBLE: ", result)
-                const amount = get(result, 'fungible_resources.items[1].vaults.items[0].amount', '0')
-                setCurrentFunding(Number(amount))
-            } catch (error) {
-                console.error('Error fetching current funding:', error)
-            }
-        },
-        [],
-    )
+    // const fetchCurrentFunding = useCallback(
+    //     async (tokenDetails: TokenDetails | null) => {
+    //         if (!tokenDetails) return
+    //         try {
+    //             const result = await radix.gateway.state.getEntityDetailsVaultAggregated("")
+    //             console.log("FUNGIBLE: ", result)
+    //             const amount = get(result, 'fungible_resources.items[1].vaults.items[0].amount', '0')
+    //             setCurrentFunding(Number(amount))
+    //         } catch (error) {
+    //             console.error('Error fetching current funding:', error)
+    //         }
+    //     },
+    //     [],
+    // )
 
     const fetchUserTokenSupply = useCallback(
         async (tokenDetails: TokenDetails | null) => {
@@ -162,14 +217,14 @@ export default function TokenPage() {
             const tokenDetails: TokenDetails | null = await fetchTokenDetails()
             if (tokenDetails) {
                 await Promise.all([
-                    fetchCurrentFunding(tokenDetails),
+                    // fetchCurrentFunding(tokenDetails),
                     fetchNFTs(tokenDetails),
                     fetchUserTokenSupply(tokenDetails)
                 ])
             }
         }
         fetchData()
-    }, [id, fetchTokenDetails, fetchCurrentFunding, fetchNFTs])
+    }, [id, fetchTokenDetails, fetchNFTs])
 
     const isNewToken = token
         ? new Date().getTime() - new Date(token.dateCreated).getTime() <
@@ -212,38 +267,62 @@ export default function TokenPage() {
             setTokenAmount(0)
         }
     }
-
-    const handleConfirmInvestment = async () => {
-        if (!token) return
+    const handleConfirmInvestment = useCallback(async () => {
+        console.log('handleConfirmInvestment', investmentAmount)
+        if (!token || !primaryWallet?.connector) return
 
         try {
-            const accountId = await radix.getCurrentAccount()
+            if (!launchpad || !collateralToken) {
+                throw new Error("Launchpad or collateral token not initialized");
+            }
+            const amount = ethers.parseUnits(investmentAmount, await collateralToken.decimals())
+            console.log('amount', amount)
+            
+            // Check allowance and approve if needed
+            const allowance = await collateralToken.allowance(
+                await primaryWallet.getWalletClient().account!.address,
+                await launchpad.getAddress()
+            );
 
-            let manifest = undefined
+            if (allowance < amount) {
+                const approveTx = await collateralToken.approve(
+                    await launchpad.getAddress(),
+                    amount
+                );
+                console.log('approveTx', approveTx)
+                await approveTx.wait();
+            }
+            console.log('allowance seems to be good')
+
             if (dialogAction === ActionType.Buy) {
-                manifest = presaleNFTMintManifest("", {
-                    accountId,
-                    collateralAddress: token.collateralAddress,
-                    amount: investmentAmount,
-                })
+                const tx = await launchpad.buyTokens(
+                    BigInt(token.id),
+                    amount,
+                    {
+                        gasLimit: 10000000
+                    }
+                );
+                console.log('tx', tx)
+
+                await tx.wait();
             }
 
-            const result = await radix.toolkit.walletApi.sendTransaction({
-                transactionManifest: manifest!,
-            })
-            const transactionId = result.unwrapOr(undefined)?.transactionIntentHash
-            if (!transactionId) throw new Error(`Transaction failed: ${result}`)
-            const _committedDetails =
-                radix.gateway.transaction.getCommittedDetails(transactionId)
+            console.log(`${dialogAction} confirmed:`, investmentAmount);
+            setIsDialogOpen(false);
 
-            console.log(`${dialogAction} confirmed:`, investmentAmount)
-            setIsDialogOpen(false)
-            // You might want to refresh the token details or user shares here
+            // Refresh token details
+            await Promise.all([
+                fetchTokenDetails(),
+                // fetchCurrentFunding(token),
+                fetchNFTs(token),
+                fetchUserTokenSupply(token)
+            ]);
+
         } catch (error) {
-            console.error(`Error during ${dialogAction}:`, error)
+            console.error(`Error during ${dialogAction}:`, error);
             // Handle the error (e.g., show an error message to the user)
         }
-    }
+    }, [token, primaryWallet?.connector, launchpad, collateralToken, dialogAction, investmentAmount, fetchTokenDetails, fetchNFTs, fetchUserTokenSupply]);
 
     const openDialog = (action: ActionType) => {
         setDialogAction(action)
@@ -367,6 +446,14 @@ export default function TokenPage() {
                                         <InfoIcon className="w-4 h-4 mr-2" />
                                         {token.description}
                                     </p>
+                                    <p className="text-sm text-gray-400 mb-1 flex items-center group relative">
+                                        <DollarSignIcon className="w-4 h-4 mr-2" />
+                                        Collateral Token: {collateralTokenSymbol || 'Loading...'}
+                                        <span className="invisible group-hover:visible absolute left-0 -bottom-12 bg-gray-800 text-white text-xs p-2 rounded shadow-lg">
+                                            This is the token you'll use to invest in this project.
+                                            Contract: {token.collateralAddress}
+                                        </span>
+                                    </p>
                                     <div className="mb-2">
                                         <p className="text-sm text-gray-400 mb-1 flex items-center">
                                             <DollarSignIcon className="w-4 h-4 mr-2" />
@@ -378,18 +465,6 @@ export default function TokenPage() {
                                             className="w-full h-2"
                                         />
                                     </div>
-                                    {/* <p className="text-sm text-gray-400 mb-4 flex items-center">
-                                        <InfoIcon className="w-4 h-4 mr-2" />
-                                        Factory Component:{' '}
-                                        <a
-                                            href={`https://stokenet-dashboard.radixdlt.com/component/${token.factoryComponentId}/summary`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-blue-400 hover:underline ml-2"
-                                        >
-                                            {token.factoryComponentId}
-                                        </a>
-                                    </p> */}
                                     {token.presaleStart && token.presaleEnd && (
                                         <div className="w-full mb-4">
                                             <p className="text-sm text-gray-400 mb-1">
@@ -419,20 +494,16 @@ export default function TokenPage() {
                                         </div>
                                     )}
                                 </div>
-                                {/* <div className="p-4 flex flex-col justify-between bg-gray-900 rounded-xl">
-                                    <h2 className="text-2xl font-bold mb-4 text-white">Bonding Curve</h2>
-                                    <Chart curve={curve} params={params} />
-                                </div> */}
                                 <div className="p-4 flex flex-col justify-between bg-gray-900 rounded-xl ml-4 w-6/12">
                                     <div>
                                         <h3 className="text-2xl font-bold text-white mb-2">
                                             You own
                                         </h3>
                                         <p className="text-6xl font-bold text-white mb-4">
-                                            {tokens ? tokens.toFixed(2) : 0} {token.symbol}
+                                            {userStats ? ethers.parseUnits(userStats.tokenAmount.toString(), userStats.tokenDecimals) : 0} {token.symbol}
                                         </p>
                                         <p className="text-6xl font-bold text-white mb-4">
-                                            {nfts ? nfts.length : 0} NFTs
+                                            {userStats?.nftBalance ?? 0} NFTs
                                         </p>
                                     </div>
                                     <div className="flex flex-col space-y-2 ">
@@ -467,8 +538,6 @@ export default function TokenPage() {
                                                 <p className="text-white font-semibold">
                                                     {nft.resourceAddress}
                                                 </p>
-                                                {/* <p className="text-sm text-gray-400">Purchased: {new Date(nft.last_updated_at).toLocaleDateString()}</p>
-                                                <p className="text-sm text-gray-400">Value: ${nft.vaults.items[0].total_amount}</p> */}
                                                 <p className="text-sm text-gray-400">
                                                     Purchased: Today
                                                 </p>
