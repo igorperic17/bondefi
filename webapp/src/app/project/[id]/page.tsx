@@ -353,10 +353,10 @@ export default function TokenPage() {
                       </p>
                       {launchInfo && (
                         <Progress
-                          value={Number(
-                            launchInfo!.launch.raised /
-                              launchInfo!.launch.targetRaise,
-                          )}
+                          value={
+                            (Number(ethers.formatUnits(launchInfo.launch.raised, launchInfo.tokenPurchaseDecimals)) /
+                              Number(ethers.formatUnits(launchInfo.launch.targetRaise, launchInfo.tokenPurchaseDecimals))) * 100
+                          }
                           className="w-full h-2"
                         />
                       )}
