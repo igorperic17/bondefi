@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BONDING_CURVES } from "@/lib/bonding-curve";
 import type { CreateTokenProps } from "@/lib/evm/dto/create-token";
 import { findLogs } from "@/lib/evm/evm-utils";
-import { BANCOR_RESERVE_RATIO_PRECISION, RESERVE_TOKENS } from "@/lib/evm/token-addresses";
+import { BANCOR_RESERVE_RATIO_PRECISION, PERCENT_PRECISION, RESERVE_TOKENS } from "@/lib/evm/token-addresses";
 import useERC20 from "@/lib/evm/use-erc20";
 import useEvmLaunchpad from "@/lib/evm/use-evm-launchpad";
 import { dateToUnixTimestamp } from "@/lib/utils";
@@ -61,12 +61,15 @@ export default function LaunchToken() {
           params.targetRaise,
           await collateralToken?.decimals(),
         ),
+        18, // 18 decimals
         userCap,
         dateToUnixTimestamp(params.saleStart),
         dateToUnixTimestamp(params.saleEnd),
         params.purchaseFormula,
         Math.floor(params.reserveRatio * BANCOR_RESERVE_RATIO_PRECISION),
         true,
+        Math.floor(0.1 * PERCENT_PRECISION), //10% launchpad fee
+        0, //no tokens fee
         {
           name: params.name,
           symbol: params.symbol,
