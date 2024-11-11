@@ -24,11 +24,13 @@ export const deploy = async (
   hre: HardhatRuntimeEnvironment,
   erc20Factory: AddressLike,
   purchaseFactory: AddressLike,
+  poolManager: AddressLike,
 ) => {
   const [deployer] = await hre.ethers.getSigners();
 
   const launchpad = await deployLaunchpad(hre, deployer);
   await launchpad.setFactories(erc20Factory, purchaseFactory);
+  await launchpad.setLiquidityPoolManager(poolManager);
 
   console.log("All contracts deployed and test data setup.");
 

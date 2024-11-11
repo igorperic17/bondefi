@@ -8,8 +8,11 @@ export const overwrite = async (hre: HardhatRuntimeEnvironment) => {
     "latest",
   );
 
+  console.log("Nonce", nonce);
+
   const tx = await deployer.sendTransaction({
     to: deployer.address, // Sending the transaction to your own address
+    gasPrice: 10,
     nonce: nonce,
     value: 0,
   });

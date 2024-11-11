@@ -12,6 +12,7 @@
     "deploy-all:testnet": "hardhat deploy-all --network polygonAmoy",
     "deploy-bancor:testnet": "hardhat deploy-bancor --network polygonAmoy",
     "deploy-launchpad:testnet": "hardhat deploy-launchpad --network polygonAmoy",
+    "deploy-liquidity-manager:testnet": "hardhat deploy-liquidity-manager --network polygonAmoy",
     "verify:testnet": "hardhat verify-contract --network polygonAmoy",
     "overwrite-nonce": "hardhat overwrite --network polygonAmoy"
   },

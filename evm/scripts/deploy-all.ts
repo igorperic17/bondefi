@@ -10,10 +10,9 @@ import {
 } from "../typechain-types";
 import { deployBancorFormula } from "./deploy-bancor";
 import { deployLaunchpad } from "./deploy-launchpad";
+import { deployPoolManager } from "./deploy-liquidity-manager";
 import { DEPLOYMENT_CONFIRMATIONS } from "./deployments";
 import { asyncVerification, waitForVerifications } from "./verify";
-import { deployPoolManager } from "./deploy-liquidity-manager";
-import { erc20 } from "../typechain-types/@openzeppelin/contracts/token";
 
 const deployTestUSDT = async (
   hre: HardhatRuntimeEnvironment,
@@ -28,7 +27,7 @@ const deployTestUSDT = async (
   );
   await contract.deploymentTransaction()?.wait(DEPLOYMENT_CONFIRMATIONS);
 
-  asyncVerification(hre, contract);
+  asyncVerification(hre, contract, "Test USDT", "USDT");
 
   return contract;
 };
@@ -114,6 +113,7 @@ export const deployAll = async (hre: HardhatRuntimeEnvironment) => {
 
   const launchpad = await deployLaunchpad(hre, deployer);
   await launchpad.setFactories(erc20Factory, purchaseFactory);
+  await launchpad.setLiquidityPoolManager(uniswapPoolManager);
 
   console.log("All contracts deployed and test data setup.");
 

@@ -2,16 +2,16 @@ export const RESERVE_TOKENS = [
   {
     name: "Thether USD (testnet)",
     symbol: "USDT",
-    address: "0x3127F8c9e414fF3EF3A7717491A3D66E842a2ee6",
+    address: "0x32240a4a86772949214183D422F475b389d93966",
   },
 ];
 export const getReserveTokenByAddress = (address: string) =>
   RESERVE_TOKENS.find((token) => token.address === address);
 
 export const EVM_LAUNCHPAD_ADDRESS =
-  "0xb4152f528DEb6af0B4a2fA3db7bC30eD85AEa5AA";
+  "0xB39405E00654D1c24b3b703a2e12bff2Eb926ba2";
 
 export const BANCOR_FORMULA_ADDRESS =
-  "0xC0277a10d52A8b42e83cB5b7806abe7db027Fc11";
+  "0x37a1E0c9CC8f333cfe827659442bEee320aD5771";
 
 export const BANCOR_RESERVE_RATIO_PRECISION = 1000000;

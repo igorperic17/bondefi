@@ -22,11 +22,20 @@ task("deploy-bancor", "Deploys bancor formula").setAction(async (_, hre) => {
 });
 
 task("deploy-launchpad", "Deploys launchpad")
+  .addPositionalParam("erc20Factory")
   .addPositionalParam("purchaseFactory")
-  .setAction(async ({ purchaseFactory }, hre) => {
+  .addPositionalParam("poolManager")
+  .setAction(async ({ erc20Factory, purchaseFactory, poolManager }, hre) => {
     const { deploy } = require("./scripts/deploy-launchpad");
-    await deploy(hre, purchaseFactory);
+    await deploy(hre, erc20Factory, purchaseFactory, poolManager);
   });
+
+task("deploy-liquidity-manager", "Deploys liquidity manager").setAction(
+  async (_, hre) => {
+    const { deploy } = require("./scripts/deploy-liquidity-manager");
+    await deploy(hre);
+  },
+);
 
 task("verify-contract", "Verifies a contract at an address")
   .addPositionalParam("address")
