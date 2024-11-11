@@ -4,13 +4,13 @@ import HyperText from "@/components/magicui/hyper-text"
 import { RainbowButton } from "@/components/magicui/rainbow-button"
 import TokenCard from '@/components/token-card'
 import { NetworkSelector } from '@/components/ui/network-selector'
+import { extractEVMTokenDetails, TokenDetails } from "@/lib/evm/dto/launch-details"
+import useEvmLaunchpad from "@/lib/evm/use-evm-launchpad"
+import { useWallets } from "@particle-network/connectkit"
 import { ChevronRight, Rocket } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useInView } from 'react-intersection-observer'
-import useEvmLaunchpad from "@/lib/evm/use-evm-launchpad"
-import { useWallets } from "@particle-network/connectkit"
-import { extractEVMTokenDetails, TokenDetails } from "@/lib/evm/dto/launch-details"
 
 const TokenList: React.FC = () => {
   const [primaryWallet] = useWallets()
@@ -27,15 +27,8 @@ const TokenList: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const totalLaunches = await launchpad.totalLaunches();
-      const launches: TokenDetails[] = [];
-      for (let i = 0; i < totalLaunches; i++) {
-        const launchProxy = await launchpad.getLaunch(i);
-        const launch: TokenDetails = extractEVMTokenDetails(launchProxy);
-        launches.push(launch);
-      }
-      console.log(launches);
-      setTokens(launches);
+      const allProjects = await launchpad.getAllLaunchDetails();
+      setTokens(allProjects.map((p) => extractEVMTokenDetails(p.launch)));
     } catch (error) {
       console.error('Error fetching tokens:', error);
     } finally {
@@ -53,7 +46,7 @@ const TokenList: React.FC = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold">All Projects</h1>
-        <div style={{minWidth: "25%"}}>
+        <div style={{ minWidth: "25%" }}>
           <NetworkSelector />
         </div>
         <RainbowButton onClick={() => router.push("/project/launch")}>
@@ -62,7 +55,7 @@ const TokenList: React.FC = () => {
           <ChevronRight className="ml-2 h-4 w-4 transition-transform duration-300 ease-in-out group-hover:translate-x-1.5" />
         </RainbowButton>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 bor">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-5 bor">
         {tokens.map((token, index) => (
           <TokenCard
             key={index}

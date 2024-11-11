@@ -44,7 +44,6 @@ const TokenCard: React.FC<TokenCardProps> = ({
     const isNewToken = presaleStart ? new Date(presaleStart) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) : false;
 
     const handleClick = () => {
-        console.log(infoUrl);
         window.location.href = infoUrl;
     };
 
