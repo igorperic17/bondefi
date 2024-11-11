@@ -1,7 +1,6 @@
 import { BaseContract, ContractTransactionResponse } from "ethers";
 import { MockContract } from "../../typechain-types";
 import { findLogs } from "./blockchain-utils";
-import { TypedContractMethod } from "../../typechain-types/common";
 
 export const mockFunctionCalled = async (
   tx: Promise<ContractTransactionResponse>,

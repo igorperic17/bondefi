@@ -17,18 +17,23 @@ const _abi = [
         type: "uint256",
       },
       {
+        internalType: "uint8",
+        name: "decimals",
+        type: "uint8",
+      },
+      {
         internalType: "uint256",
         name: "supply",
         type: "uint256",
       },
       {
         internalType: "uint256",
-        name: "connectorBalance",
+        name: "reserveBalance",
         type: "uint256",
       },
       {
         internalType: "uint32",
-        name: "connectorWeight",
+        name: "reserveRatio",
         type: "uint32",
       },
       {
@@ -49,6 +54,45 @@ const _abi = [
     type: "function",
   },
   {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "startingPrice",
+        type: "uint256",
+      },
+      {
+        internalType: "uint8",
+        name: "tokenDecimals",
+        type: "uint8",
+      },
+      {
+        internalType: "uint256",
+        name: "collateralReserves",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "tokenSupply",
+        type: "uint256",
+      },
+      {
+        internalType: "uint32",
+        name: "reserveRatio",
+        type: "uint32",
+      },
+    ],
+    name: "calculateTokenPrice",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "pure",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "maxRatio",
     outputs: [
@@ -58,7 +102,7 @@ const _abi = [
         type: "uint32",
       },
     ],
-    stateMutability: "view",
+    stateMutability: "pure",
     type: "function",
   },
 ] as const;

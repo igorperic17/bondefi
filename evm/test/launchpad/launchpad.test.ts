@@ -9,12 +9,8 @@ import {
   ERC20Token__factory,
   IBancorFormula,
   IERC20__factory,
-  INonfungiblePositionManager,
-  ISwapRouter,
-  IUniswapV3Factory,
   Launchpad,
   Launchpad__factory,
-  MockContract__factory,
   MockUniswapV3LiquidityManager__factory,
   Purchase,
   Purchase__factory,
@@ -25,22 +21,10 @@ import {
   UniswapV3LiquidityManager,
 } from "../../typechain-types";
 import { advanceToFuture, findLogs } from "../fixtures/blockchain-utils";
-import { createLaunchDetails } from "../fixtures/launch-details";
-
-const deployUniswapMocks = async (deployer: SignerWithAddress) => {
-  return {
-    mockContract: await new MockContract__factory(deployer).deploy(),
-    positionManager: (await new MockContract__factory(
-      deployer,
-    ).deploy()) as unknown as INonfungiblePositionManager,
-    swapRouter: (await new MockContract__factory(
-      deployer,
-    ).deploy()) as unknown as ISwapRouter,
-    uniswapV3Factory: (await new MockContract__factory(
-      deployer,
-    ).deploy()) as unknown as IUniswapV3Factory,
-  };
-};
+import {
+  createLaunchDetails,
+  percentageBigInt,
+} from "../fixtures/launch-details";
 
 describe("Launchpad", () => {
   const timeToStartSale = 60;
@@ -98,13 +82,6 @@ describe("Launchpad", () => {
     expect(true);
   });
 
-  const percentageBigInt = (ratio: number): bigint => {
-    if (ratio <= 0 || ratio > 1) {
-      throw new Error("Invalid reserve ratio, value must be between 0 and 1");
-    }
-    return BigInt(Math.floor(ratio * Number(maxPercentageValue)));
-  };
-
   interface LaunchSettings {
     deployERC20: boolean;
     launchpadFee: bigint;
@@ -128,6 +105,7 @@ describe("Launchpad", () => {
         targetRaise?.toString() ?? "1000",
         await dai.decimals(),
       ),
+      18,
       0,
       currentBlockTimestamp + 60,
       currentBlockTimestamp + 120,
@@ -147,6 +125,7 @@ describe("Launchpad", () => {
       const tx = launchpad.createLaunch(
         dai,
         ethers.parseUnits("1000", await dai.decimals()),
+        18,
         0,
         currentBlockTimestamp + timeToStartSale,
         currentBlockTimestamp + timeToFinishSale,
@@ -171,6 +150,7 @@ describe("Launchpad", () => {
       const tx = launchpad.createLaunch(
         dai,
         ethers.parseUnits("1000", await dai.decimals()),
+        18,
         0,
         currentBlockTimestamp + timeToStartSale,
         currentBlockTimestamp + timeToFinishSale,
@@ -236,7 +216,12 @@ describe("Launchpad", () => {
       );
 
       const event = logs[0].args;
-      expect(event).to.deep.equal([launch.id, deployer.address, ONE_DAI, 140n]); //140 is what the bancor formula is supposed to return as per its tests
+      expect(event).to.deep.equal([
+        launch.id,
+        deployer.address,
+        ONE_DAI,
+        140424891727022368613n,
+      ]);
     });
 
     it("should create an NFT when a purchase has been made", async () => {
@@ -358,13 +343,26 @@ describe("Launchpad", () => {
         dai.approve(launchpad, launch.targetRaise),
       ]);
       await launchpad.buyTokens(launch.id, launch.targetRaise);
+      const launchUpdated = await launchpad.getLaunch(launch.id);
+      const collateral = launchUpdated.raised;
       const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
       await advanceToFuture(timeAfterSale);
 
-      const tokensToBeEmitted = (await launchpad.getLaunch(launch.id))
-        .tokensToBeEmitted;
-      await token.mint(deployer, tokensToBeEmitted);
-      await token.transfer(launchpad, tokensToBeEmitted);
+      const tokensToBeEmitted = launchUpdated.tokensToBeEmitted;
+      const tokensToMint =
+        tokensToBeEmitted +
+        (await launchpad.calculateLiquiditySingleSided(
+          collateral,
+          await formula.calculateTokenPrice(
+            10n ** 14n,
+            launch.tokenDecimals,
+            collateral,
+            tokensToBeEmitted,
+            launch.reserveRatio,
+          ),
+        ));
+      await token.mint(deployer, tokensToMint);
+      await token.transfer(launchpad, tokensToMint);
 
       await launchpad.tgeEvent(launch.id, 0, ethers.ZeroAddress, token);
 
@@ -379,13 +377,26 @@ describe("Launchpad", () => {
         dai.approve(launchpad, launch.targetRaise),
       ]);
       await launchpad.buyTokens(launch.id, launch.targetRaise);
+      const launchUpdated = await launchpad.getLaunch(launch.id);
+      const collateral = launchUpdated.raised;
       const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
       await advanceToFuture(timeAfterSale);
 
-      const tokensToBeEmitted = (await launchpad.getLaunch(launch.id))
-        .tokensToBeEmitted;
-      await token.mint(deployer, tokensToBeEmitted);
-      await token.transfer(launchpad, tokensToBeEmitted);
+      const tokensToBeEmitted = launchUpdated.tokensToBeEmitted;
+      const tokensToMint =
+        tokensToBeEmitted +
+        (await launchpad.calculateLiquiditySingleSided(
+          collateral,
+          await formula.calculateTokenPrice(
+            10n ** 14n,
+            launch.tokenDecimals,
+            collateral,
+            tokensToBeEmitted,
+            launch.reserveRatio,
+          ),
+        ));
+      await token.mint(deployer, tokensToMint);
+      await token.transfer(launchpad, tokensToMint);
 
       expect(await token.balanceOf(deployer)).to.eq(0);
 
@@ -485,34 +496,55 @@ describe("Launchpad", () => {
         launchpadTokenFee: percentageBigInt(launchpadFeeTokens),
         targetRaise: 0.001,
       });
+
       await dai.mint(deployer, launch.targetRaise);
       await Promise.all([
         advanceToFuture(timeToStartSale),
         dai.approve(launchpad, launch.targetRaise),
       ]);
       await launchpad.buyTokens(launch.id, launch.targetRaise);
+      const launchUpdated = await launchpad.getLaunch(launch.id);
+      const collateral = launchUpdated.raised;
       const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
       await advanceToFuture(timeAfterSale);
 
+      const tokensToBeEmitted = launchUpdated.tokensToBeEmitted;
+      const launchpadColleteralFee =
+        (collateral * percentageBigInt(launchpadFee)) / maxPercentageValue;
+      const tokensToMint =
+        tokensToBeEmitted +
+        (await launchpad.calculateLiquiditySingleSided(
+          collateral - launchpadColleteralFee,
+          await formula.calculateTokenPrice(
+            10n ** 14n,
+            launch.tokenDecimals,
+            collateral - launchpadColleteralFee,
+            tokensToBeEmitted,
+            launch.reserveRatio,
+          ),
+        ));
+
       const erc20 = IERC20__factory.connect(
-        (await launchpad.getLaunch(launch.id)).tokenAddress,
+        launchUpdated.tokenAddress,
         ethers.provider,
       );
       expect(await erc20.balanceOf(deployer)).to.eq(0);
       expect(await erc20.balanceOf(user1)).to.eq(0);
-      const tokensToBeEmitted = (await launchpad.getLaunch(launch.id))
-        .tokensToBeEmitted;
 
-      await launchpad.tgeEventLaunchpadToken(launch.id, teamTokens, user1);
+      await launchpad.tgeEventLaunchpadToken(
+        launchUpdated.id,
+        teamTokens,
+        user1,
+      );
 
       expect(await dai.balanceOf(deployer)).to.eq(
         (launch.targetRaise * percentageBigInt(launchpadFee)) /
           maxPercentageValue,
       );
-      expect(await erc20.balanceOf(deployer)).to.eq(
-        ((tokensToBeEmitted + teamTokens) *
-          percentageBigInt(launchpadFeeTokens)) /
+      expect(await erc20.balanceOf(deployer)).to.be.closeTo(
+        ((tokensToMint + teamTokens) * percentageBigInt(launchpadFeeTokens)) /
           maxPercentageValue,
+        10n ** 16n,
       );
       expect(await erc20.balanceOf(user1)).to.eq(teamTokens);
     });
@@ -561,13 +593,27 @@ describe("Launchpad", () => {
         dai.approve(launchpad, ONE_DAI),
       ]);
       await launchpad.buyTokens(launch.id, ONE_DAI);
+      const launchUpdated = await launchpad.getLaunch(launch.id);
+      const collateral = launchUpdated.raised;
       const timeAfterSale = timeToFinishSale - timeToStartSale + 1;
       await advanceToFuture(timeAfterSale);
 
-      const tokensToBeEmitted = (await launchpad.getLaunch(launch.id))
-        .tokensToBeEmitted;
-      await token.mint(deployer, tokensToBeEmitted);
-      await token.transfer(launchpad, tokensToBeEmitted);
+      const tokensToBeEmitted = launchUpdated.tokensToBeEmitted;
+      const tokensToMint =
+        tokensToBeEmitted +
+        (await launchpad.calculateLiquiditySingleSided(
+          collateral,
+          await formula.calculateTokenPrice(
+            10n ** 14n,
+            launch.tokenDecimals,
+            collateral,
+            tokensToBeEmitted,
+            launch.reserveRatio,
+          ),
+        ));
+
+      await token.mint(deployer, tokensToMint);
+      await token.transfer(launchpad, tokensToMint);
 
       const tx = launchpad.tgeEvent(launch.id, 0, ethers.ZeroAddress, token);
 

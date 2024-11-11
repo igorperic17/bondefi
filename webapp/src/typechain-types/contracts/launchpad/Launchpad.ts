@@ -44,6 +44,7 @@ export type LaunchStruct = {
   targetRaise: BigNumberish;
   raised: BigNumberish;
   tokenAddress: AddressLike;
+  tokenDecimals: BigNumberish;
   tokensToBeEmitted: BigNumberish;
   capPerUser: BigNumberish;
   saleStart: BigNumberish;
@@ -64,6 +65,7 @@ export type LaunchStructOutput = [
   targetRaise: bigint,
   raised: bigint,
   tokenAddress: string,
+  tokenDecimals: bigint,
   tokensToBeEmitted: bigint,
   capPerUser: bigint,
   saleStart: bigint,
@@ -82,6 +84,7 @@ export type LaunchStructOutput = [
   targetRaise: bigint;
   raised: bigint;
   tokenAddress: string;
+  tokenDecimals: bigint;
   tokensToBeEmitted: bigint;
   capPerUser: bigint;
   saleStart: bigint;
@@ -106,6 +109,28 @@ export type PurchaseBalanceStructOutput = [
 ] & { collateralAmount: bigint; tokenAmount: bigint };
 
 export declare namespace Launchpad {
+  export type DistributionStruct = {
+    tokensForLaunchpad: BigNumberish;
+    tokensNeeded: BigNumberish;
+    tokensForLiquidity: BigNumberish;
+    collateralForLaunchpad: BigNumberish;
+    collateralForLiquidity: BigNumberish;
+  };
+
+  export type DistributionStructOutput = [
+    tokensForLaunchpad: bigint,
+    tokensNeeded: bigint,
+    tokensForLiquidity: bigint,
+    collateralForLaunchpad: bigint,
+    collateralForLiquidity: bigint
+  ] & {
+    tokensForLaunchpad: bigint;
+    tokensNeeded: bigint;
+    tokensForLiquidity: bigint;
+    collateralForLaunchpad: bigint;
+    collateralForLiquidity: bigint;
+  };
+
   export type LaunchInfoStruct = {
     launch: LaunchStruct;
     tokenPurchaseDecimals: BigNumberish;
@@ -160,10 +185,12 @@ export interface LaunchpadInterface extends Interface {
     nameOrSignature:
       | "MAX_PERCENT"
       | "buyTokens"
+      | "calculateLiquiditySingleSided"
       | "claim"
       | "claimAll"
       | "claimFees"
       | "createLaunch"
+      | "distribution"
       | "erc20Factory"
       | "getAllLaunchDetails"
       | "getLaunch"
@@ -175,6 +202,7 @@ export interface LaunchpadInterface extends Interface {
       | "owner"
       | "pause"
       | "paused"
+      | "priceMultiplier"
       | "purchaseFactory"
       | "refund"
       | "refundAll"
@@ -211,6 +239,10 @@ export interface LaunchpadInterface extends Interface {
     values: [BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "calculateLiquiditySingleSided",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "claim",
     values: [BigNumberish, BigNumberish]
   ): string;
@@ -230,12 +262,24 @@ export interface LaunchpadInterface extends Interface {
       BigNumberish,
       BigNumberish,
       BigNumberish,
+      BigNumberish,
       AddressLike,
       BigNumberish,
       boolean,
       BigNumberish,
       BigNumberish,
       ProjectDetailsStruct
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "distribution",
+    values: [
+      BigNumberish,
+      BigNumberish,
+      BigNumberish,
+      BigNumberish,
+      BigNumberish,
+      BigNumberish
     ]
   ): string;
   encodeFunctionData(
@@ -273,6 +317,10 @@ export interface LaunchpadInterface extends Interface {
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "priceMultiplier",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "purchaseFactory",
     values?: undefined
@@ -336,11 +384,19 @@ export interface LaunchpadInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "buyTokens", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "calculateLiquiditySingleSided",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "claim", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "claimAll", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "claimFees", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "createLaunch",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "distribution",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -375,6 +431,10 @@ export interface LaunchpadInterface extends Interface {
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "priceMultiplier",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "purchaseFactory",
     data: BytesLike
@@ -563,6 +623,12 @@ export interface Launchpad extends BaseContract {
     "nonpayable"
   >;
 
+  calculateLiquiditySingleSided: TypedContractMethod<
+    [collateral: BigNumberish, priceDesired: BigNumberish],
+    [bigint],
+    "view"
+  >;
+
   claim: TypedContractMethod<
     [launchId: BigNumberish, tokenId: BigNumberish],
     [void],
@@ -581,6 +647,7 @@ export interface Launchpad extends BaseContract {
     [
       purchaseToken: AddressLike,
       targetRaise: BigNumberish,
+      tokenDecimals: BigNumberish,
       capPerUser: BigNumberish,
       saleStart: BigNumberish,
       saleEnd: BigNumberish,
@@ -593,6 +660,19 @@ export interface Launchpad extends BaseContract {
     ],
     [void],
     "nonpayable"
+  >;
+
+  distribution: TypedContractMethod<
+    [
+      tokensForProject: BigNumberish,
+      tokensToBeEmitted: BigNumberish,
+      launchpadFee: BigNumberish,
+      launchpadFeeToken: BigNumberish,
+      raised: BigNumberish,
+      targetTokenPrice: BigNumberish
+    ],
+    [Launchpad.DistributionStructOutput],
+    "view"
   >;
 
   erc20Factory: TypedContractMethod<[], [string], "view">;
@@ -640,6 +720,8 @@ export interface Launchpad extends BaseContract {
   pause: TypedContractMethod<[], [void], "nonpayable">;
 
   paused: TypedContractMethod<[], [boolean], "view">;
+
+  priceMultiplier: TypedContractMethod<[], [bigint], "view">;
 
   purchaseFactory: TypedContractMethod<[], [string], "view">;
 
@@ -735,6 +817,13 @@ export interface Launchpad extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "calculateLiquiditySingleSided"
+  ): TypedContractMethod<
+    [collateral: BigNumberish, priceDesired: BigNumberish],
+    [bigint],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "claim"
   ): TypedContractMethod<
     [launchId: BigNumberish, tokenId: BigNumberish],
@@ -753,6 +842,7 @@ export interface Launchpad extends BaseContract {
     [
       purchaseToken: AddressLike,
       targetRaise: BigNumberish,
+      tokenDecimals: BigNumberish,
       capPerUser: BigNumberish,
       saleStart: BigNumberish,
       saleEnd: BigNumberish,
@@ -765,6 +855,20 @@ export interface Launchpad extends BaseContract {
     ],
     [void],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "distribution"
+  ): TypedContractMethod<
+    [
+      tokensForProject: BigNumberish,
+      tokensToBeEmitted: BigNumberish,
+      launchpadFee: BigNumberish,
+      launchpadFeeToken: BigNumberish,
+      raised: BigNumberish,
+      targetTokenPrice: BigNumberish
+    ],
+    [Launchpad.DistributionStructOutput],
+    "view"
   >;
   getFunction(
     nameOrSignature: "erc20Factory"
@@ -811,6 +915,9 @@ export interface Launchpad extends BaseContract {
   getFunction(
     nameOrSignature: "paused"
   ): TypedContractMethod<[], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "priceMultiplier"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "purchaseFactory"
   ): TypedContractMethod<[], [string], "view">;

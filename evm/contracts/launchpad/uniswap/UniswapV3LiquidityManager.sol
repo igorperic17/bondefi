@@ -59,9 +59,12 @@ contract UniswapV3LiquidityManager is PoolManager {
 
     (, , uint256 amount0, uint256 amount1) = _positionManager.mint(params);
 
-    require(
-      amount0 == 0 && amount1 == 0,
-      "Token amounts not 0, pool creation failed"
-    );
+    // Refund leftover tokens to the user
+    if (amount0Desired > amount0) {
+      IERC20(token0).transfer(msg.sender, amount0Desired - amount0);
+    }
+    if (amount1Desired > amount1) {
+      IERC20(token1).transfer(msg.sender, amount1Desired - amount1);
+    }
   }
 }

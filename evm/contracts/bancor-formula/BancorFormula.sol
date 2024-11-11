@@ -192,6 +192,7 @@ contract BancorFormula is IBancorFormula, Utils {
    */
   function calculatePurchaseReturn(
     uint256 _startingPrice,
+    uint8 _decimals,
     uint256 _supply,
     uint256 _reserveBalance,
     uint32 _reserveRatio,
@@ -200,7 +201,7 @@ contract BancorFormula is IBancorFormula, Utils {
     require(_reserveRatio > 0 && _reserveRatio <= MAX_RATIO, "Invalid ratio");
     require(_depositAmount > 0, "Deposit amount must be greater than 0");
 
-    uint256 virtualSupply = 1 + _supply;
+    uint256 virtualSupply = 10 ** _decimals + _supply;
     uint256 virtualReserveBalance = _reserveBalance +
       ((_startingPrice * _reserveRatio) / MAX_RATIO);
 
@@ -223,8 +224,22 @@ contract BancorFormula is IBancorFormula, Utils {
       MAX_RATIO
     );
 
-    uint256 temp = ((_supply + 1) * result) >> precision;
-    return temp - _supply - 1;
+    uint256 temp = ((_supply + 10 ** _decimals) * result) >> precision;
+    return temp - _supply - 10 ** _decimals;
+  }
+
+  //Gives token price, with 18 digit precision
+  function calculateTokenPrice(
+    uint256 startingPrice,
+    uint8 tokenDecimals,
+    uint256 collateralReserves,
+    uint256 tokenSupply,
+    uint32 reserveRatio
+  ) external pure override returns (uint256) {
+    return
+      ((collateralReserves + (((startingPrice * reserveRatio) / MAX_RATIO))) *
+        10 ** tokenDecimals) /
+      (((tokenSupply + 10 ** tokenDecimals) * reserveRatio) / MAX_RATIO);
   }
 
   /**
@@ -249,7 +264,7 @@ contract BancorFormula is IBancorFormula, Utils {
     uint256 _baseD,
     uint32 _expN,
     uint32 _expD
-  ) private view returns (uint256, uint8) {
+  ) public view returns (uint256, uint8) {
     require(_baseN < MAX_NUM);
 
     uint256 baseLog;

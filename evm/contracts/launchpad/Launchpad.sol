@@ -33,6 +33,7 @@ struct Launch {
   uint256 targetRaise;
   uint256 raised;
   address tokenAddress; //Token that will be generated for this launch. It's address(0) if the token is not created by the launchpad
+  uint8 tokenDecimals;
   uint256 tokensToBeEmitted; //Increases with each purchase, this is a virtual reserve to calcualate price of future tokens
   uint128 capPerUser; //purchaseToken, 0 means no cap
   uint32 saleStart;
@@ -48,6 +49,7 @@ struct Launch {
 
 contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   using SafeERC20 for IERC20;
+  using Math for uint256;
 
   mapping(uint32 => Launch) private _launches;
   uint32 public totalLaunches;
@@ -98,6 +100,7 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
   function createLaunch(
     address purchaseToken,
     uint256 targetRaise,
+    uint8 tokenDecimals,
     uint128 capPerUser,
     uint32 saleStart,
     uint32 saleEnd,
@@ -124,6 +127,7 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     launch.id = totalLaunches;
     launch.purchaseToken = purchaseToken;
     launch.targetRaise = targetRaise;
+    launch.tokenDecimals = tokenDecimals;
     launch.capPerUser = capPerUser;
     launch.saleStart = saleStart;
     launch.saleEnd = saleEnd;
@@ -196,7 +200,8 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     uint256 tokenAmount = IBancorFormula(launch.purchaseFormula)
       .calculatePurchaseReturn(
         //TODO: Allow starting prices above 10**18, currently this would fail due to the virtual supply of 1 token
-        10 ** 14, //startingPrice 0.0001
+        10 ** (IERC20Metadata(launch.purchaseToken).decimals() - 4), //startingPrice 0.0001
+        launch.tokenDecimals,
         launch.tokensToBeEmitted,
         launch.raised,
         launch.reserveRatio,
@@ -249,7 +254,7 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     uint32 launchId,
     uint256 tokensForProject,
     address projectAddress
-  ) external onlyOwner {
+  ) public onlyOwner {
     require(
       _launches[launchId].tokenAddress != address(0),
       "No token defined for TGE, use the tgeEvent function instead"
@@ -282,26 +287,33 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     require(block.timestamp > launch.saleEnd, "Sale not ended");
     require(launch.tokensToBeEmitted > 0, "No tokens to be emitted");
 
-    (
-      uint256 tokensForLaunchpad,
-      uint256 tokensNeeded,
-      uint256 collateralForLaunchpad,
-      uint256 collateralForLiquidity
-    ) = distribution(
-        tokensForProject,
+    uint256 targetTokenPrice = IBancorFormula(launch.purchaseFormula)
+      .calculateTokenPrice(
+        //TODO: dynamic starting price
+        //Currently startingPrice 0.0001
+        10 ** (IERC20Metadata(launch.purchaseToken).decimals() - 4),
+        launch.tokenDecimals,
+        launch.raised,
         launch.tokensToBeEmitted,
-        launch.launchpadFee,
-        launch.launchpadFeeToken,
-        launch.raised
+        launch.reserveRatio
       );
+
+    Distribution memory dist = distribution(
+      tokensForProject,
+      launch.tokensToBeEmitted,
+      launch.launchpadFee,
+      launch.launchpadFeeToken,
+      launch.raised,
+      targetTokenPrice
+    );
 
     bool tokenCreatedByLaunchpad = launch.tokenAddress != address(0);
     if (tokenCreatedByLaunchpad) {
       ERC20Token token = ERC20Token(launch.tokenAddress);
-      token.mint(address(this), tokensNeeded);
+      token.mint(address(this), dist.tokensNeeded);
     } else {
       require(
-        IERC20(tokenAddress).balanceOf(address(this)) == tokensNeeded,
+        IERC20(tokenAddress).balanceOf(address(this)) == dist.tokensNeeded,
         "Not enough funds to fund all claims"
       );
     }
@@ -313,24 +325,23 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     if (tokensForProject > 0) {
       projectToken.safeTransfer(projectAddress, tokensForProject);
     }
-    if (tokensForLaunchpad > 0) {
-      projectToken.safeTransfer(msg.sender, tokensForLaunchpad);
+    if (dist.tokensForLaunchpad > 0) {
+      projectToken.safeTransfer(msg.sender, dist.tokensForLaunchpad);
     }
     projectToken.safeTransfer(
       launch.purchaseNftAddress,
       launch.tokensToBeEmitted
     );
 
-    if (collateralForLaunchpad > 0) {
-      purchase.collectFees(msg.sender, collateralForLaunchpad);
+    if (dist.collateralForLaunchpad > 0) {
+      purchase.collectFees(msg.sender, dist.collateralForLaunchpad);
     }
 
-    //TODO mint tokens to provide liquidity
     deployLiquidity(
       launch.purchaseToken,
       tokenAddress,
-      collateralForLiquidity,
-      0
+      dist.collateralForLiquidity,
+      dist.tokensForLiquidity
     );
     setupStaking(launchId);
 
@@ -345,27 +356,80 @@ contract Launchpad is Ownable, Pausable, ReentrancyGuard {
     emit TGE(launchId, tokenAddress);
   }
 
+  struct Distribution {
+    uint256 tokensForLaunchpad;
+    uint256 tokensNeeded;
+    uint256 tokensForLiquidity;
+    uint256 collateralForLaunchpad;
+    uint256 collateralForLiquidity;
+  }
+
   function distribution(
     uint256 tokensForProject,
     uint256 tokensToBeEmitted,
     uint32 launchpadFee,
     uint32 launchpadFeeToken,
-    uint256 raised
-  )
-    private
-    pure
-    returns (
-      uint256 tokensForLaunchpad,
-      uint256 tokensNeeded,
-      uint256 collateralForLaunchpad,
-      uint256 collateralForLiquidity
-    )
-  {
-    tokensForLaunchpad = (((tokensToBeEmitted + tokensForProject) *
+    uint256 raised,
+    uint256 targetTokenPrice
+  ) public pure returns (Distribution memory) {
+    uint256 tokensForLaunchpad = (((tokensToBeEmitted + tokensForProject) *
       launchpadFeeToken) / MAX_PERCENT);
-    tokensNeeded = tokensToBeEmitted + tokensForProject + tokensForLaunchpad;
-    collateralForLaunchpad = ((raised * launchpadFee) / MAX_PERCENT);
-    collateralForLiquidity = raised - collateralForLaunchpad;
+    uint256 collateralForLaunchpad = (raised * launchpadFee) / MAX_PERCENT;
+    uint256 collateralForLiquidity = raised - collateralForLaunchpad;
+    uint256 tokensForLiquidity = calculateLiquiditySingleSided(
+      collateralForLiquidity,
+      targetTokenPrice
+    );
+    uint256 tokensNeeded = tokensToBeEmitted +
+      tokensForProject +
+      tokensForLaunchpad +
+      tokensForLiquidity;
+
+    return
+      Distribution({
+        tokensForLaunchpad: tokensForLaunchpad,
+        tokensNeeded: tokensNeeded,
+        tokensForLiquidity: tokensForLiquidity,
+        collateralForLaunchpad: collateralForLaunchpad,
+        collateralForLiquidity: collateralForLiquidity
+      });
+  }
+
+  uint256 public constant priceMultiplier = 10 ** 12; // 1e12
+
+  /**
+   * @dev Calculates the liquidity and negligible amount of Token0 required when providing only collateral (Token1).
+   * @param collateral The total amount of collateral you have (in smallest units, e.g., 6 decimals).
+   * @param priceDesired The desired initial price of Token0 in terms of collateral.
+   * @return liquidity The calculated liquidity amount.
+   */
+  function calculateLiquiditySingleSided(
+    uint256 collateral,
+    uint256 priceDesired
+  ) public pure returns (uint256 liquidity) {
+    // Calculate price bounds
+    uint256 priceLower = priceDesired;
+    uint256 priceUpper = priceDesired * priceMultiplier;
+
+    // Calculate square roots of prices (scaled to 96 bits)
+    uint160 sqrtPriceLower = uint160(sqrtX96(priceLower));
+    uint160 sqrtPriceUpper = uint160(sqrtX96(priceUpper));
+
+    // Calculate liquidity: L = collateral / (sqrtPriceUpper - sqrtPriceLower)
+    uint256 numerator = collateral << 96; // Scale collateral to Q128.96
+    uint256 denominator = sqrtPriceUpper - sqrtPriceLower;
+    liquidity = numerator / denominator;
+
+    // Calculate amount of Token0 required (negligible)
+    // amountToken0 = (liquidity * (1e18 / sqrtPriceLower)) / 1e18;
+
+    // amountToken0 will be negligible and can be considered zero
+  }
+
+  // Function to calculate sqrt price in Q96 format
+  function sqrtX96(uint256 price) internal pure returns (uint256) {
+    // price is scaled to 18 decimals, so we need to scale it to 96 bits
+    return price.sqrt() << 48; // Shift left by 48 to scale to Q96
   }
 
   function deployLiquidity(

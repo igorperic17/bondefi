@@ -22,11 +22,25 @@ import type {
 
 export interface IBancorFormulaInterface extends Interface {
   getFunction(
-    nameOrSignature: "calculatePurchaseReturn" | "maxRatio"
+    nameOrSignature:
+      | "calculatePurchaseReturn"
+      | "calculateTokenPrice"
+      | "maxRatio"
   ): FunctionFragment;
 
   encodeFunctionData(
     functionFragment: "calculatePurchaseReturn",
+    values: [
+      BigNumberish,
+      BigNumberish,
+      BigNumberish,
+      BigNumberish,
+      BigNumberish,
+      BigNumberish
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "calculateTokenPrice",
     values: [
       BigNumberish,
       BigNumberish,
@@ -39,6 +53,10 @@ export interface IBancorFormulaInterface extends Interface {
 
   decodeFunctionResult(
     functionFragment: "calculatePurchaseReturn",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "calculateTokenPrice",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "maxRatio", data: BytesLike): Result;
@@ -90,10 +108,23 @@ export interface IBancorFormula extends BaseContract {
   calculatePurchaseReturn: TypedContractMethod<
     [
       startingPrice: BigNumberish,
+      decimals: BigNumberish,
       supply: BigNumberish,
-      connectorBalance: BigNumberish,
-      connectorWeight: BigNumberish,
+      reserveBalance: BigNumberish,
+      reserveRatio: BigNumberish,
       depositAmount: BigNumberish
+    ],
+    [bigint],
+    "view"
+  >;
+
+  calculateTokenPrice: TypedContractMethod<
+    [
+      startingPrice: BigNumberish,
+      tokenDecimals: BigNumberish,
+      collateralReserves: BigNumberish,
+      tokenSupply: BigNumberish,
+      reserveRatio: BigNumberish
     ],
     [bigint],
     "view"
@@ -110,10 +141,24 @@ export interface IBancorFormula extends BaseContract {
   ): TypedContractMethod<
     [
       startingPrice: BigNumberish,
+      decimals: BigNumberish,
       supply: BigNumberish,
-      connectorBalance: BigNumberish,
-      connectorWeight: BigNumberish,
+      reserveBalance: BigNumberish,
+      reserveRatio: BigNumberish,
       depositAmount: BigNumberish
+    ],
+    [bigint],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "calculateTokenPrice"
+  ): TypedContractMethod<
+    [
+      startingPrice: BigNumberish,
+      tokenDecimals: BigNumberish,
+      collateralReserves: BigNumberish,
+      tokenSupply: BigNumberish,
+      reserveRatio: BigNumberish
     ],
     [bigint],
     "view"
