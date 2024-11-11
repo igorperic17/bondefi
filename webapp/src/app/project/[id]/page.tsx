@@ -6,20 +6,20 @@ import { useToast } from '@/hooks/use-toast'
 import { extractEVMTokenDetails, TokenDetails } from '@/lib/evm/dto/launch-details'
 import useERC20 from '@/lib/evm/use-erc20'
 import useEvmLaunchpad from '@/lib/evm/use-evm-launchpad'
-import { radix } from '@/lib/radix'
-import { Launchpad } from '@/typechain-types/contracts/launchpad/Launchpad'
+import {
+  Launchpad
+} from "@/typechain-types/contracts/launchpad/Launchpad"
 import { useWallets } from '@particle-network/connectkit'
 import { ethers } from 'ethers'
-import { get } from 'lodash'
 import {
-    ArrowLeft,
-    CalendarIcon,
-    DollarSignIcon,
-    ImageIcon,
-    InfoIcon,
-    Loader,
-    StarIcon,
-    TrendingUpIcon,
+  ArrowLeft,
+  CalendarIcon,
+  DollarSignIcon,
+  ImageIcon,
+  InfoIcon,
+  Loader,
+  StarIcon,
+  TrendingUpIcon,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
@@ -27,29 +27,22 @@ import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { ActionType, InvestmentDialog } from './investment-dialog'
 
-type ExtractedNFT = {
-    resourceAddress: string;
-    tokenId: string;
-    vaultAddress: string;
-};
-
 export default function TokenPage() {
     const { id } = useParams()
     const router = useRouter()
     const [token, setToken] = useState<TokenDetails | null>(null)
-    const [nfts, setNfts] =
-        useState<[ExtractedNFT]>()
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [investmentAmount, setInvestmentAmount] = useState('')
     const [tokenAmount, setTokenAmount] = useState(0) // for investment dialog
     const [dialogAction, setDialogAction] = useState<ActionType>(ActionType.Buy)
-    const [claimingNFT, setClaimingNFT] = useState<string | null>(null)
+    const [processingNFT, setProcessingNFT] = useState<bigint | null>(null)
     const { toast } = useToast()
 
     const [primaryWallet] = useWallets(); 
     const { launchpad } = useEvmLaunchpad(primaryWallet?.connector);
     const [collateralToken] = useERC20(primaryWallet?.connector, token?.collateralAddress ?? '');
     const [collateralTokenSymbol, setCollateralTokenSymbol] = useState<string | null>(null);
+    const [collateralTokenDecimals, setCollateralTokenDecimals] = useState<bigint | null>(null);
     const [launchInfo, setLaunchInfo] = useState<Launchpad.LaunchInfoStructOutput | null>(null);
     const [userStats, setUserStats] =
       useState<Launchpad.UserStatsStructOutput | null>(null);
@@ -99,6 +92,7 @@ export default function TokenPage() {
                 try {
                     const symbol = await collateralToken.symbol();
                     setCollateralTokenSymbol(symbol);
+                    setCollateralTokenDecimals(await collateralToken.decimals())
                 } catch (error) {
                     console.error('Error fetching collateral token symbol:', error);
                 }
@@ -187,9 +181,6 @@ export default function TokenPage() {
             await Promise.all([
                 refreshLaunchData(),
                 refreshUserData()
-                // fetchCurrentFunding(token),
-                // fetchNFTs(token),
-                // fetchUserTokenSupply(token)
             ]);
 
         } catch (error) {
@@ -203,34 +194,60 @@ export default function TokenPage() {
         setIsDialogOpen(true)
     }
 
-    const handleClaimNFT = async (nft: ExtractedNFT) => {
-        if (!token) return;
-        setClaimingNFT(nft.tokenId);
-        try {
-            const accountId = await radix.getCurrentAccount();
+    const handleClaimNFT = async (tokenId: bigint) => {
+      if (!token || !launchpad || !launchInfo) return;
+      setProcessingNFT(tokenId);
+      try {
+        const receipt = await launchpad.claim(launchInfo?.launch.id, tokenId);
+        await receipt.wait();
 
-            // const transactionId = result.unwrapOr(undefined)?.transactionIntentHash;
-            // if (!transactionId) throw new Error(`Transaction failed: ${result}`);
+        toast({
+          title: "Claim Successful",
+          description: "Your purchase has been successfully claimed!",
+        });
 
-            toast({
-                title: "Claim Successful",
-                description: "Your NFT has been successfully claimed.",
-            });
-
-            // Refresh the NFTs
-            // await fetchNFTs(token);
-            // await fetchUserTokenSupply(token);
-        } catch (error) {
-            console.error('Error claiming NFT:', error);
-            toast({
-                title: "Claim Failed",
-                description: "There was an error claiming your NFT. Please try again.",
-                variant: "destructive",
-            });
-        } finally {
-            setClaimingNFT(null);
-        }
+        // Refresh the NFTs
+        refreshUserData();
+      } catch (error) {
+        console.error("Error claiming NFT:", error);
+        toast({
+          title: "Claim Failed",
+          description:
+            "There was an error claiming your purchase. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setProcessingNFT(null);
+      }
     };
+
+    const handleRefund = async (tokenId: bigint) => {
+      if (!token || !launchpad || !launchInfo) return;
+      setProcessingNFT(tokenId);
+      try {
+        const receipt = await launchpad.refund(launchInfo?.launch.id, tokenId);
+        await receipt.wait();
+
+        toast({
+          title: "Refund successful",
+          description: "Your refund has been successfully claimed!",
+        });
+
+        // Refresh the NFTs
+        refreshUserData();
+      } catch (error) {
+        console.error("Error refunding NFT:", error);
+        toast({
+          title: "Refund Failed",
+          description:
+            "There was an error refunding your purchase. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setProcessingNFT(null);
+      }
+    };
+
 
     return (
       <div>
@@ -380,10 +397,12 @@ export default function TokenPage() {
                       </h3>
                       <p className="text-6xl font-bold text-white mb-4">
                         {userStats
-                          ? Number(ethers.formatUnits(
-                              userStats.tokenAmount,
-                              userStats.tokenDecimals,
-                            )).toFixed(2)
+                          ? Number(
+                              ethers.formatUnits(
+                                userStats.tokenAmount,
+                                userStats.tokenDecimals,
+                              ),
+                            ).toFixed(2)
                           : 0}{" "}
                         {token.symbol}
                       </p>
@@ -424,52 +443,92 @@ export default function TokenPage() {
                 <h3 className="text-2xl font-bold text-white mb-4">
                   Your NFTs
                 </h3>
-                {nfts && nfts.length > 0 ? (
+                {userStats && userStats.purchaseInfo.length > 0 ? (
                   <div className="space-y-4">
-                    {nfts.map((nft, index) => (
-                      <div
-                        key={index}
-                        className="bg-gray-800 rounded-lg p-4 flex justify-between items-center"
-                      >
-                        <div>
-                          <p className="text-white font-semibold">
-                            {nft.resourceAddress}
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            Purchased: Today
-                          </p>
-                          <p className="text-sm text-gray-400">
-                            Value: 100 USD
-                          </p>
-                        </div>
-                        <div className="flex items-center">
-                          {token.presaleEnd &&
-                            new Date() <= new Date(token.presaleEnd) && (
-                              <span className="ml-2 text-sm text-gray-400 mr-4">
-                                Claiming tokens not possible during the sale
-                              </span>
-                            )}
-                          <Button
-                            className="bg-green-500 hover:bg-green-600 text-white"
-                            onClick={() => handleClaimNFT(nft)}
-                            disabled={
-                              claimingNFT === nft.tokenId ||
-                              (token.presaleEnd &&
-                                new Date() <= new Date(token.presaleEnd))
+                    {userStats?.purchaseInfo.map(
+                      ({ tokenId, balance }, index) => (
+                        <div
+                          key={index}
+                          className="bg-gray-800 rounded-lg p-4 flex justify-between items-center"
+                        >
+                          <div>
+                            <p className="text-white font-semibold">
+                              Investment #{tokenId.toString()}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                              Purchased: Today
+                            </p>
+                            <p className="text-sm text-gray-400">
+                              Value:{" "}
+                              {collateralTokenDecimals &&
+                                Number(
+                                  ethers.formatUnits(
+                                    balance.collateralAmount,
+                                    collateralTokenDecimals,
+                                  ),
+                                ).toFixed(2)}{" "}
+                              {collateralTokenSymbol}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                              Token Value:{" "}
+                              {collateralTokenDecimals &&
+                                Number(
+                                  ethers.formatUnits(
+                                    balance.tokenAmount,
+                                    launchInfo.launch.tokenDecimals,
+                                  ),
+                                ).toFixed(2)}{" "}
+                              {token.symbol}
+                            </p>
+                          </div>
+                          <div className="flex items-center">
+                            {token.presaleEnd &&
+                              new Date() <= new Date(token.presaleEnd) && (
+                                <span className="ml-2 text-sm text-gray-400 mr-4">
+                                  Claiming tokens not possible during the sale
+                                </span>
+                              )}
+
+                            {isNotFunded && (
+                              <Button
+                                className="bg-green-500 hover:bg-green-600 text-white"
+                                onClick={() => handleRefund(tokenId)}
+                                disabled={
+                                  processingNFT === tokenId
+                                }
+                              >
+                                {processingNFT === tokenId ? (
+                                  <>
+                                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                    Refunding...
+                                  </>
+                                ) : (
+                                  "Refund"
+                                )}
+                              </Button>
+                            ) || (
+                              <Button
+                                  className="bg-green-500 hover:bg-green-600 text-white"
+                                  onClick={() => handleClaimNFT(tokenId)}
+                                  disabled={
+                                    processingNFT === tokenId ||
+                                    !launchInfo.launch.claimEnabled
+                                  }
+                                >
+                                  {processingNFT === tokenId ? (
+                                    <>
+                                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                      Claiming...
+                                    </>
+                                  ) : (
+                                    "Claim"
+                                  )}
+                              </Button>)
                             }
-                          >
-                            {claimingNFT === nft.tokenId ? (
-                              <>
-                                <Loader className="mr-2 h-4 w-4 animate-spin" />
-                                Claiming...
-                              </>
-                            ) : (
-                              "Claim"
-                            )}
-                          </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 ) : (
                   <p className="text-gray-400">
