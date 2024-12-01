@@ -1,4 +1,4 @@
-import { UserDto } from "@shared/src/dto/user.dto";
+import { UserDto } from "@shared/src/dto/user/user.dto";
 import TestAgent from "supertest/lib/agent";
 
 export const apiCreateUser = async (api: TestAgent, user: UserDto) => {

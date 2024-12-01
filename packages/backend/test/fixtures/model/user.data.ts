@@ -9,10 +9,9 @@ export const createValidUser = (user?: Partial<User>) => {
   const validUser = maybeAssign(
     {
       id: faker.string.numeric(16),
-    },
-    {
       walletAddress: faker.finance.ethereumAddress(),
     },
+    {},
   ) as MinimalUser;
 
   return { ...validUser, ...user } as MinimalUser;
