@@ -32,8 +32,8 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const payload = this.jwtService.verify<LoggedInUser>(token, {
-        secret: this.config.get<ConfigSecrets>("secrets").jwtSecret,
-        maxAge: `${this.config.get<number>("session.expiryMinutes")}m`,
+        secret: this.config.getOrThrow<ConfigSecrets>("secrets").jwtSecret,
+        maxAge: `${this.config.getOrThrow<number>("session.expiryMinutes")}m`,
       });
       request["user"] = payload;
     } catch {

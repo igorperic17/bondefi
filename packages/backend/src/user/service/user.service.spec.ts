@@ -3,7 +3,7 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { EntityNotFoundException } from "src/common/exception/db/entity-not-found.exception";
 import { DuplicateEntityException } from "src/common/exception/service/duplicate-user.exception";
 import { createValidUser } from "test/fixtures/model/user.data";
-import { User } from "../model/user.model";
+import { MinimalUser } from "../model/user.model";
 import { UserRepository } from "../repository/user.repository";
 import { UserDtoMapper } from "./user-mapping.service";
 import { UserService } from "./user.service";
@@ -23,7 +23,7 @@ class MockedUserRepository {
   });
 
   static createdUserIds: Set<string> = new Set();
-  static create = jest.fn().mockImplementation((user: Partial<User>) => {
+  static create = jest.fn().mockImplementation((user: MinimalUser) => {
     if (this.createdUserIds.has(user.id)) {
       throw new DuplicateEntityException("");
     }

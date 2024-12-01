@@ -19,7 +19,7 @@ export class UserRepository {
    * @param id - The ID of the user to find.
    * @returns A promise that resolves to the found user.
    */
-  async findById(id: string): Promise<User> {
+  async findById(id: string): Promise<User | null> {
     return await this.userModel
       .findOne({
         id,

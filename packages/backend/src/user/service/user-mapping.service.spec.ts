@@ -24,11 +24,12 @@ describe("User Validation", () => {
         type: "body",
         metatype: UserDto,
       });
-    } catch (error) {
+    } catch (error: unknown) {
       expect(error).toBeInstanceOf(BadRequestException);
-      expect(error.getResponse().message).toEqual([
-        "property username should not exist",
-      ]);
+      const { message } = (error as BadRequestException).getResponse() as {
+        message: string;
+      };
+      expect(message).toEqual(["property username should not exist"]);
     }
   });
 });

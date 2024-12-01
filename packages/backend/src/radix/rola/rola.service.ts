@@ -15,10 +15,10 @@ export class RolaService {
 
   constructor(config: ConfigService) {
     const { verifySignedChallenge } = Rola({
-      applicationName: config.get("radix.appName"),
-      dAppDefinitionAddress: config.get("radix.dAppDefinition"),
-      networkId: config.get("radix.networkId"), // network id of the Radix network
-      expectedOrigin: config.get("frontend.url"), // origin of the client making the wallet request
+      applicationName: config.getOrThrow("radix.appName"),
+      dAppDefinitionAddress: config.getOrThrow("radix.dAppDefinition"),
+      networkId: config.getOrThrow("radix.networkId"), // network id of the Radix network
+      expectedOrigin: config.getOrThrow("frontend.url"), // origin of the client making the wallet request
     });
 
     this.rolaVerifier = verifySignedChallenge;

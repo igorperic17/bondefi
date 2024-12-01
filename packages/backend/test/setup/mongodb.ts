@@ -18,7 +18,7 @@ export const setupMockDatabase = async (
     process.env.MONGODB_TEST_URI = mongod.getUri();
   }
 
-  await mongoose.connect(process.env.MONGODB_TEST_URI);
+  await mongoose.connect(process.env.MONGODB_TEST_URI!);
 
   return {
     uri: process.env.MONGODB_TEST_URI,

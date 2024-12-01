@@ -56,6 +56,7 @@ describe("AuthController", () => {
     } as unknown as Response;
 
     it("should return valid login information", async () => {
+      config.set("session.expiryMinutes", 30);
       const userId = faker.number.int();
       const { initDataRaw } = createValidWebappInitData();
       const webappAuthDto: TelegramWebappAuthDtoValid = {

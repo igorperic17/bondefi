@@ -21,7 +21,7 @@ export class TelegramWebappAuthDtoValid {
     message: "Invalid telegram init data",
   })
   @IsNotEmpty()
-  initDataRaw: string;
+  initDataRaw!: string;
 
   constructor({ initDataRaw }: Partial<TelegramWebappAuthDtoValid> = {}) {
     if (initDataRaw) this.initDataRaw = initDataRaw;

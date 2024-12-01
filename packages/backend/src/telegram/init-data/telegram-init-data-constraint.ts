@@ -18,13 +18,18 @@ export class TelegramInitDataValid implements ValidatorConstraintInterface {
     }
 
     try {
-      initDataValidate(value, this.config.get<string>("telegram.appToken"), {
-        expiresIn: this.config.get<number>("telegram.webappDataExpirySeconds"),
-      });
+      const token = this.config.get<string>("telegram.appToken");
+      if (token) {
+        initDataValidate(value, token, {
+          expiresIn: this.config.get<number>(
+            "telegram.webappDataExpirySeconds",
+          ),
+        });
 
-      return true;
-    } catch (e: unknown) {
-      return false;
-    }
+        return true;
+      }
+    } catch {}
+
+    return false;
   }
 }

@@ -1,4 +1,3 @@
-import { CorsSettings } from "@config/configuration";
 import {
   DynamicModule,
   INestApplication,
@@ -10,9 +9,10 @@ import { ConfigService } from "@nestjs/config";
 import { useContainer } from "class-validator";
 import * as cookieParser from "cookie-parser";
 import { Application as ExpressApplication } from "express";
+import { CorsSettings } from "@config/configuration";
 
 export const getCorsOrigin = (config: ConfigService) => {
-  const corsSettings = config.get<CorsSettings>("cors");
+  const corsSettings = config.get<CorsSettings>("cors", {});
 
   let corsSettingEnabled = null;
   for (const [key, setting] of Object.entries(corsSettings)) {

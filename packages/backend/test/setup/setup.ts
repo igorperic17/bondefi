@@ -46,7 +46,7 @@ const setupNest = async (
     const mockDb = await setupMockDatabase();
 
     moduleMetadata.imports = [
-      TypegooseModule.forRoot(mockDb.uri, {
+      TypegooseModule.forRoot(mockDb.uri!, {
         //Each test will have its own database in memory
         dbName: `test_${faker.string.alphanumeric(24)}`,
       }),
@@ -100,6 +100,7 @@ const setupNest = async (
       "Unable to start environment in preparation for tests, error details:",
       e,
     );
+    throw new Error("Unable to start environment in preparation for tests");
   }
 };
 

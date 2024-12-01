@@ -1,14 +1,14 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
+import { SignedChallenge } from "@radixdlt/rola";
 import { UserDto } from "@shared/src/dto/user/user.dto";
 import { InitData } from "@telegram-apps/init-data-node";
 import { EntityNotFoundException } from "src/common/exception/db/entity-not-found.exception";
 import { UserService } from "src/user/service/user.service";
 import { TelegramJwtDto } from "../../../shared/src/dto/auth/telegram-jwt-dto";
-import { LoggedInUser } from "./logged-in-user-data";
 import { RolaService } from "../radix/rola/rola.service";
-import { SignedChallenge } from "@radixdlt/rola";
+import { LoggedInUser } from "./logged-in-user-data";
 
 @Injectable()
 export class AuthService {
@@ -61,7 +61,7 @@ export class AuthService {
     userId: string,
     walletAddress?: string,
   ): Promise<UserDto> {
-    let userObj: UserDto;
+    let userObj: UserDto | undefined;
     try {
       userObj = await this.userService.getUser(userId);
     } catch (e) {

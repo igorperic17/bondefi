@@ -32,5 +32,5 @@ const userDtoMapper = new UserDtoMapper();
 
 export const createValidUserDto = (user?: Partial<User>): UserDto => {
   const validUser = createValidUser(user);
-  return userDtoMapper.fromUser(validUser);
+  return userDtoMapper.fromUser(validUser)!;
 };

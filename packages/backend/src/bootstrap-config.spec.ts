@@ -2,15 +2,12 @@ import { faker } from "@faker-js/faker/.";
 import { ConfigService } from "@nestjs/config";
 import { Test, TestingModule } from "@nestjs/testing";
 import { CorsSettings } from "@config/configuration";
-import {
-  mockConfigProvider,
-  MockConfigService,
-} from "test/fixtures/config/mock-config-provider";
+import { mockConfigProvider } from "test/fixtures/config/mock-config-provider";
 import { getCorsOrigin } from "./bootstrap-config";
 
 describe("bootstrap", () => {
   let app: TestingModule;
-  let config: MockConfigService;
+  let config: ConfigService;
 
   beforeAll(async () => {
     app = await Test.createTestingModule({

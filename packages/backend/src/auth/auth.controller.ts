@@ -9,13 +9,13 @@ import {
   Res,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { SignedChallenge } from "@radixdlt/rola";
 import { BACKEND_JWT_COOKIE_NAME } from "@shared/src/cookie/auth";
 import { InitData } from "@telegram-apps/init-data-node";
 import { CookieOptions, Response } from "express";
 import { TelegramInitDataPipeTransform } from "src/telegram/init-data/telegram-init-data-transform.pipe";
 import { TelegramWebappAuthDtoValid } from "src/telegram/init-data/valid-init-data.dto";
 import { AuthService } from "./auth.service";
-import { SignedChallenge } from "@radixdlt/rola";
 
 const MINUTE = 1000 * 60;
 
@@ -58,15 +58,21 @@ export class AuthController {
     webappAuthDto: TelegramWebappAuthDtoValid,
     @Res({ passthrough: true }) res: Response,
   ) {
-    let userId: string;
+    let userId: string | undefined;
     let webappInitData: InitData;
 
     try {
       webappInitData =
         this.telegramInitDataTransformer.transform(webappAuthDto);
-      userId = webappInitData.user.id.toString();
-    } catch (e) {
+      userId = webappInitData.user?.id.toString();
+    } catch {
       throw new BadRequestException("Invalid initData");
+    }
+
+    if (!userId) {
+      throw new BadRequestException(
+        "Unable to authenticate user, incorrect initData",
+      );
     }
 
     const loginResult = await this.authService.logInWithTelegram(
@@ -88,7 +94,7 @@ export class AuthController {
       httpOnly: true,
       secure: true,
       sameSite: "strict",
-      maxAge: this.config.get<number>("session.expiryMinutes") * MINUTE,
+      maxAge: this.config.getOrThrow<number>("session.expiryMinutes") * MINUTE,
     };
 
     if (this.config.get<string>("env") === "local") {

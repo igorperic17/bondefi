@@ -2,7 +2,7 @@ import { MongoClient } from "mongodb";
 import { deleteTempDir } from "./mongo-temp-dir";
 
 export default async () => {
-  const client = await MongoClient.connect(process.env.MONGODB_TEST_URI);
+  const client = await MongoClient.connect(process.env.MONGODB_TEST_URI!);
 
   await new Promise<boolean>((resolve) => {
     const adminDb = client.db("admin");

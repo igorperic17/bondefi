@@ -52,13 +52,14 @@ const validWebappInitDataStatic: InitData = {
 export const createValidWebappInitData = (
   userId: number = faker.number.int(),
 ) => {
-  const signInput = {
+  const signInput: Omit<InitData, "hash" | "authDate"> &
+    Partial<Pick<InitData, "hash" | "authDate">> = {
     ...validWebappInitDataStatic,
     ...{
       user: {
         ...validWebappInitDataStatic.user,
         id: userId,
-      },
+      } as InitData["user"],
     },
   };
 
@@ -66,14 +67,13 @@ export const createValidWebappInitData = (
   delete signInput.authDate;
 
   const authDate = new Date(1000);
-
   const initDataRaw = sign(signInput, testAppTokenSecret, authDate);
 
-  signInput.hash = new URLSearchParams(initDataRaw).get("hash");
+  signInput.hash = new URLSearchParams(initDataRaw).get("hash")!;
   signInput.authDate = authDate;
 
   return {
     initDataRaw,
-    initData: signInput,
+    initData: signInput as InitData,
   };
 };
