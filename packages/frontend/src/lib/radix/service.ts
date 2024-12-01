@@ -2,6 +2,7 @@ import {
   DataRequestBuilder,
   RadixDappToolkit,
   RadixNetwork,
+  WalletData,
 } from "@radixdlt/radix-dapp-toolkit";
 
 import { GatewayApiClient } from "@radixdlt/babylon-gateway-api-sdk";
@@ -60,6 +61,20 @@ export class RadixService {
 
     this.toolkit.buttonApi.setMode("dark");
     // this.toolkit.buttonApi.setTheme('')
+  }
+
+  public async setupLoginChallenge(
+    challengeGenerator: () => Promise<string>,
+    onSuccess: (walletResponse: WalletData) => Promise<any>,
+  ) {
+    await this.toolkit.walletApi.setRequestData(
+      DataRequestBuilder.persona().withProof(),
+      DataRequestBuilder.accounts().atLeast(1).withProof(),
+    );
+    await this.toolkit.walletApi.provideChallengeGenerator(challengeGenerator);
+    await this.toolkit.walletApi.dataRequestControl(onSuccess);
+
+    return true;
   }
 
   public getCurrentAccount = () => {
