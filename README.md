@@ -13,7 +13,16 @@ We solve two main problems here:
 4. Once the presale is over, buyers can redeem their NFTs to get their tokens (or get a full refund in case that the presale goal was not reached).
 5. As soon as the token lists, a staking contract is enabled so the trading fees paid in the pool are used to distribute rewards to stakers, with a proportional distribution based on the amount of tokens held.
 
-# How to run
+
+# Running monorepo in local
+From the root of the repo, just run:
+
+1. docker compose up -d mongodb
+2. yarn
+3. yarn dev
+
+
+# Executing Radix Scrypto tests
 
 1. Install Rust and add it to your path: https://www.rust-lang.org/tools/install
 2. Install the Scrypto CLI: https://github.com/radixdlt/scrypto
