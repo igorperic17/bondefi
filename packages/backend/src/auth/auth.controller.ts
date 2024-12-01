@@ -16,6 +16,7 @@ import { CookieOptions, Response } from "express";
 import { TelegramInitDataPipeTransform } from "src/telegram/init-data/telegram-init-data-transform.pipe";
 import { TelegramWebappAuthDtoValid } from "src/telegram/init-data/valid-init-data.dto";
 import { AuthService } from "./auth.service";
+import { TypedBody } from "@nestia/core";
 
 const MINUTE = 1000 * 60;
 
@@ -37,7 +38,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post("/radix/login")
   async loginWithRadix(
-    @Body() signedChallenges: SignedChallenge[],
+    @TypedBody() signedChallenges: SignedChallenge[],
     @Res({ passthrough: true }) res: Response,
   ) {
     const loginResult = await this.authService.logInWithRadix(signedChallenges);

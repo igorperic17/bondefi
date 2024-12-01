@@ -20,7 +20,7 @@ import { UserModule } from "./user/user.module";
       module: FeatureModule,
       global: true,
     },
-    TypegooseModule.forRoot(process.env.MONGODB_URI),
+    TypegooseModule.forRoot(process.env.MONGODB_URI || ""),
     HealthModule,
     UserModule,
     AuthModule,

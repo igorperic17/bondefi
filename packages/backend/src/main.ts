@@ -7,7 +7,7 @@ import { configureMainApiNestApp } from "./bootstrap-config";
 async function bootstrap() {
   const logger = new Logger("Main");
   const app = await NestFactory.create(AppModule);
-  const port = parseInt(process.env.PORT, 10) || 3001;
+  const port = parseInt(process.env.PORT || "3001", 10);
 
   validateRequiredEnvVariables();
 

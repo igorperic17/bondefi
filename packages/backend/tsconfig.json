@@ -2,6 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "module": "commonjs",
+    "strictNullChecks": true,
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -16,6 +17,15 @@
       "@config/*": ["./config/*"],
       "@shared/*": ["../shared/*"]
     },
+    "plugins": [
+      { "transform": "typia/lib/transform" },
+      { 
+        "transform": "@nestia/core/lib/transform",
+        "validate": "validateEquals", // Verbose validation with detailed errors, can be changed to be faster and less verbose (is, assertClone or similar, review https://nestia.io/docs/core/TypedBody/#configuration),
+        "stringify": "assert"
+      },
+      { "transform": "@nestia/sdk/lib/transform" } // for runtime swagger composition
+    ],
     "incremental": true,
     "skipLibCheck": true,
     "resolveJsonModule": true
