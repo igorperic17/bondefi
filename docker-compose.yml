@@ -1,0 +1,37 @@
+version: "3.4"
+services:
+  frontend:
+    build:
+      context: .
+      target: frontend
+      dockerfile: Dockerfile.frontend
+    container_name: bondefi-app-frontend
+    ports:
+      - "3000:80"
+
+  backend:
+    build:
+      context: .
+      target: backend
+      dockerfile: Dockerfile.backend
+    container_name: bondefi-app-backend
+    networks:
+      - backend
+    links:
+      - mongodb
+    environment:
+      PORT: "80"
+      MONGODB_URI: "mongodb://mongodb:27017/bondefi"
+    env_file:
+      - packages/backend/.env
+    ports:
+      - "3001:80"
+
+  mongodb:
+    image: mongo:latest
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+
+networks:
+  backend:

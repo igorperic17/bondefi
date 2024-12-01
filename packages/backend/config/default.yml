@@ -1,0 +1,6 @@
+env: "prod"
+features:
+  devMode: false
+session:
+  expiryMinutes: 30
+cors: #CORS needs to be empty by default to avoid clashes across environments

@@ -22,7 +22,7 @@ We solve two main problems here:
 
 # EVM support
 
-Head over to [evm](./evm/)
+Head over to [evm](./packages/evm/)
 
 Supported chains:
 

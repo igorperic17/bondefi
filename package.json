@@ -2,13 +2,31 @@
   "name": "bondefi-monorepo",
   "private": true,
   "workspaces": [
-    "contract",
-    "evm",
-    "webapp"
+    "packages/*"
   ],
+  "scripts": {
+    "prepare": "./scripts/prepare",
+    "dev": "lerna run dev --parallel --scope \"{backend,frontend}\"",
+    "dev:frontend": "lerna run dev --scope frontend",
+    "dev:backend": "lerna run dev --scope backend",
+    "test": "lerna run test --scope frontend && lerna run test --scope backend",
+    "test:cov": "lerna run test --scope frontend && lerna run test:cov --scope backend",
+    "test:e2e": "lerna run test:e2e --scope \"backend\"",
+    "test:e2e-cov": "lerna run test:e2e-cov --scope \"backend\"",
+    "lint": "lerna run lint --scope \"{backend,frontend}\"",
+    "lint:check": "lerna run lint:check --scope \"{backend,frontend}\"",
+    "build": "lerna run build --scope \"{backend,frontend}\"",
+    "load-test": "./load-testing/start-test.sh"
+  },
   "devDependencies": {
+    "@types/node": "^22.10.1",
     "eslint": "latest",
-    "eslint-config-next": "latest"
+    "eslint-config-next": "latest",
+    "husky": "^9.1.7",
+    "husky-init": "^8.0.0",
+    "lerna": "^8.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
   },
   "engines": {
     "node": ">=22",

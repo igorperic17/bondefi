@@ -1,0 +1,5 @@
+env: "prod"
+features:
+  devMode: false
+cors:
+  specificOriginRegExp: ^https://(.*)[.]bondefi[.]xyz$
